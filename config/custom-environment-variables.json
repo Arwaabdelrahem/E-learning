@@ -1,0 +1,8 @@
+{
+    "jwtprivateKey": "jwtprivateKey",
+    "cloud_name": "myCloudName",
+    "api_key": "myApiKey",
+    "api_secret": "myApiSecret",
+    "pass":"myPassword",
+    "DB":"mongoDB"
+}
