@@ -45,13 +45,13 @@ router.post("/register", multer, async (req, res, next) => {
   var transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "arwaabdelrahem22@gmail.com",
+      user: "arwaabdelrahem2@gmail.com",
       pass: config.get("pass"),
     },
   });
 
   var mailOptions = {
-    from: "arwaabdelrahem22@gmail.com",
+    from: "arwaabdelrahem2@gmail.com",
     to: req.body.email,
     subject: "Verfication Code",
     text: `your verfication code ${code}`,
