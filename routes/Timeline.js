@@ -25,7 +25,7 @@ router.post(
   validate,
   async (req, res, next) => {
     let img;
-    if (req.files) {
+    if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
     }
 

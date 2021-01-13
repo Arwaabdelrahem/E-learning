@@ -116,7 +116,7 @@ router.delete("/:courseId/:materialId", isTeacher, async (req, res, next) => {
 
   try {
     material.delete();
-    res.status(204);
+    res.status(200).send("Deleted successfully");
   } catch (error) {
     res.status(400).send(error.message);
   }
