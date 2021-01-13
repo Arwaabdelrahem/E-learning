@@ -16,6 +16,7 @@ app.use(cors());
 app.use("Uploads", express.static("Uploads"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+require("./startup/production")(app);
 
 app.use("/admin", admin);
 app.use("/users", user);
@@ -25,7 +26,6 @@ app.use("/teachers/material", material);
 app.use("/timeline", timeline);
 app.use(errorHandler);
 app.use(serverErrorHandler);
-require("./startup/production")(app);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
