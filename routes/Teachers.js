@@ -67,10 +67,12 @@ router.put("/:courseId", isTeacher, async (req, res, next) => {
 
   for (const i in teacher.courses) {
     if (teacher.courses.indexOf(req.params.courseId) == -1) {
+      console.log("not course owner");
       return res.status(403).send("Forbidden");
     }
 
     if (teacher.courses[i]._id == req.params.courseId) {
+      console.log("course owner");
       course = course.set({
         code: req.body.code,
         name: req.body.name,
