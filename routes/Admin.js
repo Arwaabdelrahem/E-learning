@@ -44,8 +44,7 @@ router.post("/activate/:id", async (req, res, next) => {
   let user = await User.findById(req.params.id);
   if (!user) return res.status(400).send("User doesnot exits");
 
-  if (user.enabled) user.enabled = false;
-  user.enabled = true;
+  user.enabled ? (user.enabled = false) : (user.enabled = true);
 
   try {
     await user.save();
