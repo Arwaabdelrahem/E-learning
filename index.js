@@ -25,6 +25,7 @@ app.use("/teachers/material", material);
 app.use("/timeline", timeline);
 app.use(errorHandler);
 app.use(serverErrorHandler);
+require("./startup/production")(app);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
