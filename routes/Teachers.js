@@ -65,14 +65,12 @@ router.put("/:courseId", isTeacher, async (req, res, next) => {
   let course = await Course.findById(req.params.courseId);
   if (!course) return res.status(404).send("Course with given ID not found");
 
-  for (const i in teacher.courses) {
-    if (teacher.courses.indexOf(req.params.courseId) == -1) {
-      console.log("not course owner");
-      return res.status(403).send("Forbidden");
-    }
+  if (teacher.courses.indexOf(req.params.courseId) == -1) {
+    return res.status(403).send("Forbidden");
+  }
 
+  for (const i in teacher.courses) {
     if (teacher.courses[i]._id == req.params.courseId) {
-      console.log("course owner");
       course = course.set({
         code: req.body.code,
         name: req.body.name,
@@ -118,10 +116,11 @@ router.delete("/:courseId", isTeacher, async (req, res, next) => {
   const course = await Course.findById(req.params.courseId);
   if (!course) return res.status(404).send("Course already not found");
 
+  if (teacher.courses.indexOf(req.params.courseId) == -1) {
+    return res.status(403).send("Forbidden");
+  }
+
   for (const i in teacher.courses) {
-    if (teacher.courses.indexOf(req.params.courseId) == -1) {
-      return res.status(403).send("Forbidden");
-    }
     if (teacher.courses[i]._id == req.params.courseId) {
       teacher.courses.splice(i, 1);
       await teacher.save();

@@ -8,10 +8,8 @@ module.exports = function (req, res, next) {
   try {
     const decode = jwt.verify(token, config.get("jwtprivateKey"));
     req.user = decode;
-    if (req.user.kind != "Teacher")
-      return res.status(403).send("Access denied.");
-    next();
+    if (req.user.kind == "Teacher") next();
   } catch (error) {
-    res.status(400).send("Invalid token");
+    return res.status(403).send("Access denied.");
   }
 };
