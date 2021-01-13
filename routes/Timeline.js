@@ -190,7 +190,7 @@ router.delete(
 
           post.comments.splice(i, 1);
           await post.save();
-          return res.status(200).send({ msg: "comment deleted", post: post });
+          res.status(200).send({ msg: "comment deleted", post: post });
         }
         post.comments.splice(i, 1);
         await post.save();
