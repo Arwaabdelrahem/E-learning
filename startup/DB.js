@@ -1,15 +1,18 @@
 const mongoose = require("mongoose");
 const config = require("config");
 
-config.get("DB");
+// config.get("DB");
 module.exports = function () {
   mongoose
-    .connect(config.get("DB"), {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true,
-      useFindAndModify: false,
-    })
+    .connect(
+      "mongodb+srv://Arwaabdelrahem:mongo@cluster0.xse5n.mongodb.net/E-learning?retryWrites=true&w=majority",
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+      }
+    )
     .then(() => {
       console.log("MongoDB connected");
     });

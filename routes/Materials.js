@@ -21,7 +21,7 @@ router.get("/:courseId", isTeacher, async (req, res, next) => {
         { course: req.params.courseId },
         { populate: [{ path: "course", select: "name" }] }
       );
-      res.status(200).send(material);
+      return res.status(200).send(material);
     }
   }
 });
@@ -34,9 +34,9 @@ router.post("/:courseId", isTeacher, multer, async (req, res, next) => {
   const course = await Course.findById(req.params.courseId);
   if (!course) return res.status(404).send("Course not found");
 
-  let courseMaterial;
+  let img;
   if (req.files.length != 0) {
-    courseMaterial = await cloud.cloudUpload(req.files[0].path);
+    img = await cloud.cloudUpload(req.files[0].path);
   }
 
   for (const i in teacher.courses) {
@@ -46,9 +46,9 @@ router.post("/:courseId", isTeacher, multer, async (req, res, next) => {
 
     if (teacher.courses[i]._id == req.params.courseId) {
       material = new Material({
-        link: courseMaterial ? courseMaterial.image : req.body.image,
+        link: img ? img.image : req.body.image,
         course: req.params.courseId,
-        type: courseMaterial ? req.files[0].mimetype : "videoLink",
+        type: img ? req.files[0].mimetype : "videoLink",
         description: req.body.description,
       });
       await material.save();
@@ -74,9 +74,9 @@ router.put(
     let material = await Material.findById(req.params.materialId);
     if (!material) return res.status(404).send("Material Not found");
 
-    let courseMaterial;
+    let img;
     if (req.files.length != 0) {
-      courseMaterial = await cloud.cloudUpload(req.files[0].path);
+      img = await cloud.cloudUpload(req.files[0].path);
     }
 
     for (const i in teacher.courses) {
@@ -86,8 +86,8 @@ router.put(
 
       if (teacher.courses[i]._id == req.params.courseId) {
         material = material.set({
-          link: courseMaterial ? courseMaterial.image : req.body.image,
-          type: courseMaterial ? req.files[0].mimetype : "videoLink",
+          link: img ? img.image : req.body.image,
+          type: img ? req.files[0].mimetype : "videoLink",
           description: req.body.description,
         });
         await material.save();
@@ -116,7 +116,7 @@ router.delete("/:courseId/:materialId", isTeacher, async (req, res, next) => {
 
   try {
     material.delete();
-    res.status(204).send("Deleted successfully");
+    res.status(204);
   } catch (error) {
     res.status(400).send(error.message);
   }

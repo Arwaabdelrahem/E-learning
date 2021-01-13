@@ -15,9 +15,9 @@ router.get("/", async (req, res, next) => {
     select: "-password -__v",
     populate: [{ path: "courses", select: "name" }],
   };
-  const teachers = await Teacher.paginate({}, op);
-  const students = await Student.paginate({}, op);
-  res.status(200).send({ Teachers: teachers, Students: students });
+
+  const users = await User.paginate({ kind: ["Student", "Teacher"] }, op);
+  res.status(200).send(users);
 });
 
 router.post("/register", multer, async (req, res, next) => {
@@ -57,14 +57,7 @@ router.post("/register", multer, async (req, res, next) => {
     text: `your verfication code ${code}`,
   };
 
-  transporter.sendMail(mailOptions, function (error, info) {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log(`Email sent: ${info.response}`);
-    }
-  });
-
+  transporter.sendMail(mailOptions);
   try {
     student.emailVerifingCode = code;
     await student.save();
@@ -89,7 +82,6 @@ router.post("/verifyCode", async (req, res, next) => {
       res.status(200).send(user);
     }
   } catch (error) {
-    console.log(user.emailVerifingCode);
     res.status(400).send(error.message);
   }
 });

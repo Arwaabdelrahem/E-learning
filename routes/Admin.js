@@ -30,14 +30,13 @@ router.post("/addTeacher", isAdmin, async (req, res, next) => {
     email: req.body.email,
     password: await bcrypt.hash(req.body.password, 10),
     enabled: true,
-    isTeacher: true,
   });
 
   try {
     await teacher.save();
     res.status(201).send(teacher);
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(400).send(error.message);
   }
 });
 
@@ -45,11 +44,9 @@ router.post("/activate/:id", async (req, res, next) => {
   let user = await User.findById(req.params.id);
   if (!user) return res.status(400).send("User doesnot exits");
 
-  if (user.enabled) {
-    user.enabled = false;
-  } else {
-    user.enabled = true;
-  }
+  if (user.enabled) user.enabled = false;
+  user.enabled = true;
+
   try {
     await user.save();
     res.status(200).send(user);

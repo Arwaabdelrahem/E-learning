@@ -7,8 +7,9 @@ const { User } = require("../models/user");
 const router = express.Router();
 
 router.get("/myEnrollment", isStudent, async (req, res, next) => {
-  const student = await User.findById(req.user._id);
   let myCourses = [];
+  const student = await User.findById(req.user._id);
+
   const enrollment = await Enrollment.find({ student: student })
     .select("course status")
     .populate([{ path: "course", select: "name" }]);
@@ -19,11 +20,8 @@ router.get("/myEnrollment", isStudent, async (req, res, next) => {
     }
   }
 
-  if (req.body.filter) {
-    return res.status(200).send(myCourses);
-  } else {
-    res.status(200).send(enrollment);
-  }
+  if (req.body.filter) return res.status(200).send(myCourses);
+  res.status(200).send(enrollment);
 });
 
 router.get("/liveCourses", isStudent, async (req, res, next) => {
@@ -32,38 +30,20 @@ router.get("/liveCourses", isStudent, async (req, res, next) => {
 
   for (const i in courses) {
     let checkDate = (finish, start, now) => {
-      if (finish.setHours(0, 0, 0, 0) < now.setHours(0, 0, 0, 0)) {
-        return true;
-      } else if (start.setHours(0, 0, 0, 0) > now.setHours(0, 0, 0, 0)) {
-        return true;
-      }
+      if (finish.setHours(0, 0, 0, 0) < now.setHours(0, 0, 0, 0)) return true;
+      if (start.setHours(0, 0, 0, 0) > now.setHours(0, 0, 0, 0)) return true;
       return false;
     };
+
     let result = checkDate(
       courses[i].finishingDate,
       courses[i].startingDate,
       new Date()
     );
-    if (result == false) {
-      liveCourses.push(courses[i]);
-    }
+    if (result == false) liveCourses.push(courses[i]);
   }
 
   res.status(200).send(liveCourses);
-});
-
-router.get("/material/:courseId", isStudent, async (req, res, next) => {
-  const enrollment = await Enrollment.findOne({
-    student: req.user._id,
-    course: req.params.courseId,
-  });
-  if (!enrollment) return res.status(400).send("please enroll first");
-
-  if (enrollment.status != "accepted")
-    return res.status(400).send("Enrollment status must be accepted");
-
-  const materials = await Material.paginate({ course: req.params.courseId });
-  res.status(200).send(materials);
 });
 
 router.post("/enroll", isStudent, async (req, res, next) => {
@@ -88,6 +68,20 @@ router.post("/enroll", isStudent, async (req, res, next) => {
   await student.save();
   await enroll.save();
   res.status(200).send({ Student: student, Enrollment: enroll });
+});
+
+router.get("/material/:courseId", isStudent, async (req, res, next) => {
+  const enrollment = await Enrollment.findOne({
+    student: req.user._id,
+    course: req.params.courseId,
+  });
+  if (!enrollment) return res.status(400).send("please enroll first");
+
+  if (enrollment.status != "accepted")
+    return res.status(400).send("Enrollment status must be accepted");
+
+  const materials = await Material.paginate({ course: req.params.courseId });
+  res.status(200).send(materials);
 });
 
 module.exports = router;

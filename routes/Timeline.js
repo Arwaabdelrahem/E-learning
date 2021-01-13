@@ -74,10 +74,12 @@ router.put(
     if (req.files) {
       img = await cloud.cloudUpload(req.files[0].path);
     }
+
     post = post.set({
       content: req.body.content,
       image: img ? img.image : req.body.image,
     });
+
     await post.save();
     if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
     await Post.populate(post, [
@@ -98,10 +100,9 @@ router.delete("/:courseId/:postId", auth, validate, async (req, res, next) => {
 
     await post.delete();
     return res.status(200).send("post deleted");
-  } else {
-    await post.delete();
-    return res.status(200).send("post deleted");
   }
+  await post.delete();
+  res.status(200).send("post deleted");
 });
 
 //Create, Update, Delete Comments

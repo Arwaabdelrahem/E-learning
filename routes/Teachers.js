@@ -50,7 +50,7 @@ router.post("/newCourse", isTeacher, async (req, res, next) => {
   });
 
   await course.save();
-  if (teacher.courses.indexOf(course._id) === -1) {
+  if (teacher.courses.indexOf(course._id) == -1) {
     teacher.courses.push(course._id);
     await teacher.save();
   }
@@ -66,6 +66,10 @@ router.put("/:courseId", isTeacher, async (req, res, next) => {
   if (!course) return res.status(404).send("Course with given ID not found");
 
   for (const i in teacher.courses) {
+    if (teacher.courses.indexOf(req.params.courseId) == -1) {
+      return res.status(403).send("Forbidden");
+    }
+
     if (teacher.courses[i]._id == req.params.courseId) {
       course = course.set({
         code: req.body.code,
@@ -113,11 +117,12 @@ router.delete("/:courseId", isTeacher, async (req, res, next) => {
   if (!course) return res.status(404).send("Course already not found");
 
   for (const i in teacher.courses) {
-    if (teacher.courses.indexOf(req.params.courseId) != -1) {
-      if (teacher.courses[i] == req.params.courseId) {
-        teacher.courses.splice(i, 1);
-        await teacher.save();
-      }
+    if (teacher.courses.indexOf(req.params.courseId) == -1) {
+      return res.status(403).send("Forbidden");
+    }
+    if (teacher.courses[i]._id == req.params.courseId) {
+      teacher.courses.splice(i, 1);
+      await teacher.save();
     }
   }
 
