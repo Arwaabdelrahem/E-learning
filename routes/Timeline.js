@@ -10,7 +10,7 @@ const router = express.Router();
 
 //Fetch, Create, Update, Delete Posts
 router.get("/:courseId", auth, validate, async (req, res, next) => {
-  const posts = await Post.findOne({ course: req.params.courseId });
+  const posts = await Post.find({ course: req.params.courseId });
   await Post.populate(posts, [
     { path: "user", select: "name" },
     { path: "comments.user", select: "name" },
