@@ -6,7 +6,7 @@ const user = require("./routes/Users");
 const teacher = require("./routes/Teachers");
 const material = require("./routes/Materials");
 const timeline = require("./routes/Timeline");
-const student = require("./routes/students");
+const student = require("./routes/Students");
 const { errorHandler, serverErrorHandler } = require("./middleware/error");
 
 const app = express();
