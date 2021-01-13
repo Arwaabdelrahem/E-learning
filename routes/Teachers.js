@@ -25,7 +25,7 @@ router.get("/myStudents/:courseId", isTeacher, async (req, res, next) => {
   const enrolled = await Enrollment.find({
     course: req.params.courseId,
   })
-    .select("student")
+    .select("student status")
     .populate([{ path: "student", select: "name" }]);
 
   res.status(200).send(enrolled);
