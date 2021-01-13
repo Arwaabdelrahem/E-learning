@@ -57,7 +57,13 @@ router.post("/register", multer, async (req, res, next) => {
     text: `your verfication code ${code}`,
   };
 
-  transporter.sendMail(mailOptions);
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(`Email sent: ${info.response}`);
+    }
+  });
   try {
     student.emailVerifingCode = code;
     await student.save();
