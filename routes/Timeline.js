@@ -71,7 +71,7 @@ router.put(
       return res.status(403).send("Only the post author can update");
 
     let img;
-    if (req.files) {
+    if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
     }
 
@@ -116,7 +116,7 @@ router.post(
     if (!post) return res.status(404).send("Post not found");
 
     let img;
-    if (req.files) {
+    if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
     }
 
@@ -147,7 +147,7 @@ router.put(
     if (!post) return res.status(404).send("Post not found");
 
     let img;
-    if (req.files) {
+    if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
     }
 
