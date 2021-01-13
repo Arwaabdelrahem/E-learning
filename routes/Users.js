@@ -1,7 +1,7 @@
 const express = require("express");
 const { User, register, log } = require("../models/user");
-const { Teacher } = require("../models/teacher");
 const { Student } = require("../models/student");
+const config = require("config");
 const multer = require("../middleware/multer");
 const cloud = require("../startup/cloudinary");
 const bcrypt = require("bcrypt");
