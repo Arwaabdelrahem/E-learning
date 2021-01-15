@@ -2,18 +2,20 @@ const express = require("express");
 const { Teacher, teacherValidate } = require("../models/teacher");
 const bcrypt = require("bcrypt");
 const isAdmin = require("../middleware/isAdmin");
+const auth = require("../middleware/auth");
 const { User } = require("../models/user");
 const router = express.Router();
 
-router.get("/students", isAdmin, async (req, res, next) => {
+router.get("/students", auth, isAdmin, async (req, res, next) => {
   let students;
-  if (req.body.search) {
+  if (req.params.status) {
     const text = "^" + req.body.search;
     const Regex = new RegExp(text, "gi");
     students = await User.find({
-      name: req.body.search == "" ? /^$|/ : Regex,
+      name: req.params.status == "" ? /^$|/ : Regex,
       kind: "Student",
     });
+
     res.status(200).send(students);
   } else {
     students = await User.find({ kind: "Student" });
@@ -21,16 +23,13 @@ router.get("/students", isAdmin, async (req, res, next) => {
   }
 });
 
-router.post("/addTeacher", isAdmin, async (req, res, next) => {
+router.post("/addTeacher", auth, isAdmin, async (req, res, next) => {
   const { error } = teacherValidate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const teacher = new Teacher({
-    name: req.body.name,
-    email: req.body.email,
-    password: await bcrypt.hash(req.body.password, 10),
-    enabled: true,
-  });
+  req.body.password = await bcrypt.hash(req.body.password, 10);
+  req.body.enabled = true;
+  const teacher = new Teacher(req.body);
 
   try {
     await teacher.save();

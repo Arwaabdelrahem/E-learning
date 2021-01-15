@@ -7,10 +7,6 @@ const studentSchema = User.discriminator(
     emailVerifingCode: {
       type: String,
     },
-    enabled: {
-      type: Boolean,
-      default: false,
-    },
     myEnrollment: [
       {
         type: mongoose.Schema.Types.ObjectId,

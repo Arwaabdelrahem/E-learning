@@ -22,6 +22,10 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    enabled: {
+      type: Boolean,
+      default: false,
+    },
     image: {
       type: String,
     },
@@ -49,7 +53,7 @@ function logValidation(user) {
 
 userSchema.methods.generateToken = function () {
   const token = jwt.sign(
-    { _id: this._id, isAdmin: this.isAdmin, kind: this.kind },
+    { _id: this._id, enabled: this.enabled, kind: this.kind },
     config.get("jwtprivateKey")
   );
   return token;

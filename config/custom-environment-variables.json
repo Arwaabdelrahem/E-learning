@@ -1,6 +1,5 @@
 {
     "jwtprivateKey": "elearning_jwtprivateKey",
-    "node_env":"NODE_ENV",
     "cloud_name": "myCloudName",
     "api_key": "myApiKey",
     "api_secret": "myApiSecret",

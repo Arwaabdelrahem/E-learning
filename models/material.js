@@ -11,6 +11,7 @@ const materialSchema = mongoose.Schema({
   },
   type: {
     type: String,
+    enum: ["videoLink", "Image"],
   },
   description: {
     type: String,

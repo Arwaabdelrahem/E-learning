@@ -1,61 +1,56 @@
 const express = require("express");
 const { Material } = require("../models/material");
-const { Teacher } = require("../models/teacher");
 const { Course } = require("../models/course");
 const cloud = require("../startup/cloudinary");
 const isTeacher = require("../middleware/isTeacher");
 const multer = require("../middleware/multer");
 const fs = require("fs");
+const auth = require("../middleware/auth");
+const { Enrollment } = require("../models/enrollment");
 const router = express.Router();
 
-router.get("/:courseId", isTeacher, async (req, res, next) => {
-  const teacher = await Teacher.findById(req.user._id);
-
-  for (const i in teacher.courses) {
-    if (teacher.courses.indexOf(req.params.courseId) == -1) {
+router.get("/:courseId", auth, async (req, res, next) => {
+  if (req.user.kind === "Teacher") {
+    if (req.user.courses.indexOf(req.params.courseId) === -1) {
       return res.status(403).send("Forbidden");
     }
-
-    if (teacher.courses[i]._id == req.params.courseId) {
-      const material = await Material.paginate(
-        { course: req.params.courseId },
-        { populate: [{ path: "course", select: "name" }] }
-      );
-      return res.status(200).send(material);
-    }
   }
+
+  if (req.user.kind === "Student") {
+    const enrollment = await Enrollment.findOne({
+      student: req.user._id,
+      course: req.params.courseId,
+      status: "accepted",
+    });
+    if (!enrollment) return res.status(400).send("please enroll first");
+  }
+
+  const materials = await Material.paginate({ course: req.params.courseId });
+  res.status(200).send(materials);
 });
 
-router.post("/:courseId", isTeacher, multer, async (req, res, next) => {
-  let material;
-  const teacher = await Teacher.findById(req.user._id);
-  if (!teacher) return res.status(404).send("Teacher not found");
-
+router.post("/:courseId", auth, isTeacher, multer, async (req, res, next) => {
   const course = await Course.findById(req.params.courseId);
   if (!course) return res.status(404).send("Course not found");
+  req.body.course = req.params.courseId;
 
   let img;
   if (req.files.length != 0) {
     img = await cloud.cloudUpload(req.files[0].path);
+    req.body.image = img.image;
   }
 
-  for (const i in teacher.courses) {
-    if (teacher.courses.indexOf(req.params.courseId) == -1) {
-      return res.status(403).send("Forbidden");
-    }
+  req.body.type = img ? "Image" : "videoLink";
 
-    if (teacher.courses[i]._id == req.params.courseId) {
-      material = new Material({
-        link: img ? img.image : req.body.image,
-        course: req.params.courseId,
-        type: img ? req.files[0].mimetype : "videoLink",
-        description: req.body.description,
-      });
-      await material.save();
-    }
+  if (req.user.courses.indexOf(req.params.courseId) === -1) {
+    return res.status(403).send("Forbidden");
   }
+  console.log(req.body);
+  let material = new Material(req.body);
+  await material.save();
+
   try {
-    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+    if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
     await Material.populate(material, [{ path: "course", select: "name" }]);
     res.status(201).send(material);
   } catch (error) {
@@ -63,59 +58,43 @@ router.post("/:courseId", isTeacher, multer, async (req, res, next) => {
   }
 });
 
-router.put(
-  "/:courseId/:materialId",
-  isTeacher,
-  multer,
-  async (req, res, next) => {
-    const teacher = await Teacher.findById(req.user._id);
-    if (!teacher) return res.status(404).send("Teacher not found");
-
-    let material = await Material.findById(req.params.materialId);
-    if (!material) return res.status(404).send("Material Not found");
-
-    let img;
-    if (req.files.length != 0) {
-      img = await cloud.cloudUpload(req.files[0].path);
-    }
-
-    for (const i in teacher.courses) {
-      if (teacher.courses.indexOf(req.params.courseId) == -1) {
-        return res.status(403).send("Forbidden");
-      }
-
-      if (teacher.courses[i]._id == req.params.courseId) {
-        material = material.set({
-          link: img ? img.image : req.body.image,
-          type: img ? req.files[0].mimetype : "videoLink",
-          description: req.body.description,
-        });
-        await material.save();
-      }
-    }
-    try {
-      if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
-      await Material.populate(material, [{ path: "course", select: "name" }]);
-      res.status(201).send(material);
-    } catch (error) {
-      res.status(400).send(error.message);
-    }
-  }
-);
-
-router.delete("/:courseId/:materialId", isTeacher, async (req, res, next) => {
-  const teacher = await Teacher.findById(req.user._id);
-  if (!teacher) return res.status(404).send("Teacher not found");
-
+router.put("/:materialId", auth, isTeacher, multer, async (req, res, next) => {
   let material = await Material.findById(req.params.materialId);
   if (!material) return res.status(404).send("Material Not found");
 
-  if (teacher.courses.indexOf(req.params.courseId) == -1) {
+  if (req.user.courses.indexOf(material.course) === -1) {
+    return res.status(403).send("Forbidden");
+  }
+
+  let img;
+  if (req.files.length !== 0) {
+    img = await cloud.cloudUpload(req.files[0].path);
+    req.body.link = img.image;
+  }
+
+  req.body.type = img ? "Image" : "videoLink";
+  material = material.set(req.body);
+  await material.save();
+
+  try {
+    if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
+    await Material.populate(material, [{ path: "course", select: "name" }]);
+    res.status(201).send(material);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
+
+router.delete("/:materialId", auth, isTeacher, async (req, res, next) => {
+  let material = await Material.findById(req.params.materialId);
+  if (!material) return res.status(404).send("Material Not found");
+
+  if (req.user.courses.indexOf(req.params.courseId) === -1) {
     return res.status(403).send("Forbidden");
   }
 
   try {
-    material.delete();
+    await material.delete();
     res.status(200).send("Deleted successfully");
   } catch (error) {
     res.status(400).send(error.message);

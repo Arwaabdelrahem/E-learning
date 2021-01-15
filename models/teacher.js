@@ -12,10 +12,6 @@ const teacherSchema = User.discriminator(
         ref: "Course",
       },
     ],
-    enabled: {
-      type: Boolean,
-      default: false,
-    },
   })
 );
 

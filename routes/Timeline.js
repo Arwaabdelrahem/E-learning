@@ -10,11 +10,16 @@ const router = express.Router();
 
 //Fetch, Create, Update, Delete Posts
 router.get("/:courseId", auth, validate, async (req, res, next) => {
-  const posts = await Post.find({ course: req.params.courseId });
-  await Post.populate(posts, [
-    { path: "user", select: "name" },
-    { path: "comments.user", select: "name" },
-  ]);
+  const posts = await Post.paginate(
+    { course: req.params.courseId },
+    {
+      populate: [
+        { path: "user", select: "name" },
+        { path: "comments.user", select: "name" },
+      ],
+    }
+  );
+
   res.status(200).send(posts);
 });
 
@@ -27,14 +32,12 @@ router.post(
     let img;
     if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
+      req.body.image = img.image;
     }
+    req.body.course = req.params.courseId;
+    req.body.user = req.user._id;
 
-    const post = new Post({
-      content: req.body.content,
-      image: img ? img.image : undefined,
-      user: req.user._id,
-      course: req.params.courseId,
-    });
+    const post = new Post(req.body);
     await post.save();
     if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
     await Post.populate(post, [
@@ -45,9 +48,8 @@ router.post(
   }
 );
 
-router.get("/:courseId/:postId", auth, validate, async (req, res, next) => {
+router.get("/:postId", auth, validate, async (req, res, next) => {
   const posts = await Post.findOne({
-    course: req.params.courseId,
     _id: req.params.postId,
   });
 
@@ -58,39 +60,31 @@ router.get("/:courseId/:postId", auth, validate, async (req, res, next) => {
   res.status(200).send(posts);
 });
 
-router.put(
-  "/:courseId/:postId",
-  auth,
-  validate,
-  multer,
-  async (req, res, next) => {
-    let post = await Post.findById(req.params.postId);
-    if (!post) return res.status(404).send("post not found");
+router.put("/:postId", auth, validate, multer, async (req, res, next) => {
+  let post = await Post.findById(req.params.postId);
+  if (!post) return res.status(404).send("post not found");
 
-    if (post.user != req.user._id)
-      return res.status(403).send("Only the post author can update");
+  if (post.user.toString() !== req.user._id.toString())
+    return res.status(403).send("Only the post author can update");
 
-    let img;
-    if (req.files.length != 0) {
-      img = await cloud.cloudUpload(req.files[0].path);
-    }
-
-    post = post.set({
-      content: req.body.content,
-      image: img ? img.image : req.body.image,
-    });
-
-    await post.save();
-    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
-    await Post.populate(post, [
-      { path: "user", select: "name" },
-      { path: "comments.user", select: "name" },
-    ]);
-    res.status(200).send(post);
+  let img;
+  if (req.files.length !== 0) {
+    img = await cloud.cloudUpload(req.files[0].path);
+    req.body.image = img.image;
   }
-);
 
-router.delete("/:courseId/:postId", auth, validate, async (req, res, next) => {
+  post = post.set(req.body);
+
+  await post.save();
+  if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
+  await Post.populate(post, [
+    { path: "user", select: "name" },
+    { path: "comments.user", select: "name" },
+  ]);
+  res.status(200).send(post);
+});
+
+router.delete("/:postId", auth, validate, async (req, res, next) => {
   let post = await Post.findById(req.params.postId);
   if (!post) return res.status(404).send("Post already doesnt exists");
 
@@ -118,13 +112,10 @@ router.post(
     let img;
     if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
+      req.body.image = img.image;
     }
-
-    const comment = {
-      content: req.body.content,
-      image: img ? img.image : req.body.image,
-      user: req.user._id,
-    };
+    req.body.user = req.user._id;
+    const comment = req.body;
 
     await post.comments.push(comment);
     if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
@@ -143,30 +134,29 @@ router.put(
   validate,
   multer,
   async (req, res, next) => {
-    let post = await Post.findById(req.params.postId);
+    let post = await Post.findById(req.params.postId).populate([
+      { path: "user", select: "name" },
+      { path: "comments.user", select: "name" },
+    ]);
     if (!post) return res.status(404).send("Post not found");
 
     let img;
     if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
+      req.body.image = img.image;
     }
 
     for (const i in post.comments) {
-      if (post.comments[i].user == req.user._id) {
-        if (post.comments[i]._id == req.params.commentId) {
-          post.comments[i].set({
-            content: req.body.content,
-            image: img ? img.image : req.body.image,
-          });
-          if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+      if (post.comments[i]._id.toString() !== req.params.commentId.toString()) {
+        return res.status(404).send("comment not found");
+      }
 
-          await post.save();
-          await Post.populate(post, [
-            { path: "user", select: "name" },
-            { path: "comments.user", select: "name" },
-          ]);
-          return res.status(200).send(post);
-        }
+      if (post.comments[i].user._id.toString() === req.user._id.toString()) {
+        post.comments[i].set(req.body);
+
+        if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+        await post.save();
+        return res.status(200).send(post.comments);
       }
     }
     res.status(403).send("Only comment author can update");
@@ -183,15 +173,13 @@ router.delete(
 
     for (const i in post.comments) {
       if (post.comments[i]._id == req.params.commentId) {
-        if (req.user.kind == "Student") {
-          if (post.comments[i].user != req.user._id) {
-            return res.status(403).send("Only comment author can delete ");
-          }
-
-          post.comments.splice(i, 1);
-          await post.save();
-          res.status(200).send({ msg: "comment deleted", post: post });
+        if (
+          post.comments[i].user._id.toString() !== req.user._id.toString() &&
+          req.user.kind == "Student"
+        ) {
+          return res.status(403).send("Only comment author can delete ");
         }
+
         post.comments.splice(i, 1);
         await post.save();
         res.status(200).send({ msg: "comment deleted", post: post });

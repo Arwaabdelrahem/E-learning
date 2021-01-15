@@ -28,16 +28,12 @@ router.post("/register", multer, async (req, res, next) => {
   if (student) return res.status(400).send("Student exists");
 
   let img;
-  if (req.files) {
+  if (req.files.length !== 0) {
     img = await cloud.cloudUpload(req.files[0].path);
+    req.body.image = img.image;
   }
 
-  student = new Student({
-    name: req.body.name,
-    email: req.body.email,
-    password: await bcrypt.hash(req.body.password, 10),
-    image: img ? img.image : undefined,
-  });
+  req.body.password = await bcrypt.hash(req.body.password, 10);
 
   var generator = new CodeGenerator();
   const code = generator.generateCodes("#+#+#+", 100)[0];
@@ -64,10 +60,11 @@ router.post("/register", multer, async (req, res, next) => {
       console.log(`Email sent: ${info.response}`);
     }
   });
+
   try {
-    student.emailVerifingCode = code;
-    await student.save();
-    if (req.files) fs.unlinkSync(req.files[0].path);
+    req.body.emailVerifingCode = code;
+    student = new Student(req.body).save();
+    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
     res.status(201).send(student);
   } catch (error) {
     res.status(400).send(error.message);
