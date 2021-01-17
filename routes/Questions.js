@@ -1,6 +1,8 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 const isTeacher = require("../middleware/isTeacher");
+const { Choice } = require("../models/choice");
+const { TorF } = require("../models/TorF");
 const { Course } = require("../models/course");
 const { Question } = require("../models/question");
 const validate = require("./postValidation");
@@ -27,13 +29,13 @@ router.post("/:courseId", auth, isTeacher, async (req, res, next) => {
   req.body.addedBy = req.user._id;
   req.body.course = req.params.courseId;
 
-  let question = new Question(req.body);
+  let question;
+  if (req.body.choices) {
+    question = new Choice(req.body);
+  }
+  question = new TorF(req.body);
   await question.save();
 
-  await Question.populate(question, [
-    { path: "addedBy", select: "name" },
-    { path: "course", select: "code name" },
-  ]);
   res.status(201).send(question);
 });
 
@@ -87,7 +89,7 @@ router.delete(
     if (!question) return res.status(404).send("Question not found");
 
     await question.delete();
-    res.status(200);
+    res.status(200).send("Question deleted");
   }
 );
 
