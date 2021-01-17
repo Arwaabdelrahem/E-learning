@@ -70,6 +70,7 @@ router.delete(
     if (!question) return res.status(404).send("Question not found");
 
     for (const i in exam.questions) {
+      console.log(exam.questions[i].question);
       if (
         exam.questions[i].question.toString() ===
         req.params.questionId.toString()
@@ -77,6 +78,7 @@ router.delete(
         exam.questions.splice(i, 1);
         await exam.save();
       }
+      return res.status(404).send("Question not exist");
     }
 
     res.status(200).send(exam);
