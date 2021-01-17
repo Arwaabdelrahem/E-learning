@@ -28,7 +28,8 @@ router.post("/register", multer, async (req, res, next) => {
   if (student) return res.status(400).send("Student exists");
 
   let img;
-  if (req.files.length !== 0) {
+  console.log(req.files);
+  if (req.files) {
     img = await cloud.cloudUpload(req.files[0].path);
     req.body.image = img.image;
   }
@@ -42,7 +43,7 @@ router.post("/register", multer, async (req, res, next) => {
     service: "gmail",
     auth: {
       user: "arwaabdelrahem2@gmail.com",
-      pass: config.get("pass"),
+      pass: /*config.get("pass")*/ "Panda^%$",
     },
   });
 
@@ -64,7 +65,7 @@ router.post("/register", multer, async (req, res, next) => {
   try {
     req.body.emailVerifingCode = code;
     student = new Student(req.body).save();
-    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+    if (req.files) fs.unlinkSync(req.files[0].path);
     res.status(201).send(student);
   } catch (error) {
     res.status(400).send(error.message);

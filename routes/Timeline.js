@@ -33,7 +33,9 @@ router.post(
     if (req.files.length != 0) {
       img = await cloud.cloudUpload(req.files[0].path);
       req.body.image = img.image;
+      console.log(img, req.files);
     }
+
     req.body.course = req.params.courseId;
     req.body.user = req.user._id;
 

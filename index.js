@@ -7,6 +7,7 @@ const teacher = require("./routes/Teachers");
 const material = require("./routes/Materials");
 const timeline = require("./routes/Timeline");
 const student = require("./routes/Students");
+const question = require("./routes/Questions");
 const { errorHandler, serverErrorHandler } = require("./middleware/error");
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/users", user);
 app.use("/teachers", teacher);
 app.use("/students", student);
 app.use("/teachers/material", material);
+app.use("/questions", question);
 app.use("/timeline", timeline);
 app.use(errorHandler);
 app.use(serverErrorHandler);
