@@ -3,6 +3,7 @@ const auth = require("../middleware/auth");
 const isStudent = require("../middleware/isStudent");
 const { Course } = require("../models/course");
 const { Enrollment } = require("../models/enrollment");
+const { Solution } = require("../models/solution");
 const router = express.Router();
 
 router.get("/myEnrollment", auth, isStudent, async (req, res, next) => {
@@ -18,6 +19,18 @@ router.get("/myEnrollment", auth, isStudent, async (req, res, next) => {
     .populate([{ path: "course", select: "name" }]);
 
   res.status(200).send(enrollment);
+});
+
+router.get("/myResults", auth, isStudent, async (req, res, next) => {
+  const solutions = await Solution.find({
+    student: req.user._id,
+  }).populate([{ path: "quiz", select: "title" }]);
+
+  for (const i in solutions) {
+    res
+      .status(200)
+      .send({ Exam: solutions[i].quiz, Mark: solutions[i].totalMark });
+  }
 });
 
 router.get("/liveCourses", auth, isStudent, async (req, res, next) => {

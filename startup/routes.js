@@ -9,6 +9,7 @@ const timeline = require("../routes/Timeline");
 const student = require("../routes/Students");
 const question = require("../routes/Questions");
 const exam = require("../routes/Exams");
+const solution = require("../routes/Solutions");
 const { errorHandler, serverErrorHandler } = require("../middleware/error");
 
 module.exports = function (app) {
@@ -23,6 +24,7 @@ module.exports = function (app) {
   app.use("/teachers/material", material);
   app.use("/questions", question);
   app.use("/exams", exam);
+  app.use("/solutions", solution);
   app.use("/timeline", timeline);
   app.use(errorHandler);
   app.use(serverErrorHandler);
