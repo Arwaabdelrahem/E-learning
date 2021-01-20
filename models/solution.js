@@ -40,10 +40,6 @@ const solutionSchema = new mongoose.Schema(
         { discriminatorKey: "type", _id: false }
       ),
     ],
-    totalMark: {
-      type: Number,
-      default: 0,
-    },
   },
   { timestamps: true }
 );

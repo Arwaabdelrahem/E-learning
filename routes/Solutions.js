@@ -1,20 +1,41 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 const isStudent = require("../middleware/isStudent");
+const isTeacher = require("../middleware/isTeacher");
 const validate = require("./postValidation");
 const { Solution } = require("../models/solution");
 const { Question } = require("../models/question");
 const { Exam } = require("../models/exam");
 const router = express.Router();
 
-router.get("/:examId", async (req, res, next) => {
-  const solutions = await Solution.find({
-    quiz: req.params.examId,
-    status: "done",
-  });
-  if (!solutions) return res.status(404).send("No Solutions found");
+router.get(
+  "/:courseId/:examId",
+  auth,
+  isTeacher,
+  validate,
+  async (req, res, next) => {
+    let query = {
+      quiz: req.params.examId,
+      ...(req.body.status && {
+        status: req.body.status,
+      }),
+    };
+    const solutions = await Solution.find(query);
+    if (solutions.length === 0)
+      return res.status(404).send("No Solutions found");
 
-  res.status(200).send(solutions);
+    res.status(200).send(solutions);
+  }
+);
+
+router.get("/marks", auth, async (req, res, next) => {
+  let solution = await Solution.findOne({ student: req.user._id });
+  if (!solution) return res.status(404).send("Solution not found");
+
+  await Solution.populate(solution, [
+    { path: "quiz", populate: [{ path: "course", select: "name code" }] },
+  ]);
+  res.status(200).send({ Exam: solution.quiz, Marks: solution.mark });
 });
 
 router.post(
@@ -39,75 +60,76 @@ router.post(
     req.body.student = req.user._id;
 
     const solution = new Solution(req.body);
-    for (const i in exam.questions) {
-      let questions = {
-        question: exam.questions[i].question,
-      };
-      solution.questions.push(questions);
-    }
-
     await solution.save();
+
     res.status(201).send(solution);
   }
 );
 
 router.post(
-  "/:courseId/:examId/:solutionId",
+  "/submit/:courseId/:examId",
   auth,
   isStudent,
   validate,
   async (req, res, next) => {
-    let exam = await Exam.findById(req.params.examId);
-    if (!exam) return res.status(404).send("Exam not found");
+    let solution = await Solution.findOne({
+      quiz: req.params.examId,
+      student: req.user._id,
+    });
+    if (!solution) return res.status(404).send("Solution not found");
 
-    let solution = await Solution.findById(req.params.solutionId);
-    if (!solution) return res.status(404).send("Sol not found");
-
-    let question = await Question.findById(req.body.questionId);
+    let question = await Question.findById(req.body.question);
+    if (!question) return res.status(404).send("Question not found");
 
     for (const i in solution.questions) {
       if (
         solution.questions[i].question.toString() === question._id.toString()
       ) {
-        solution.questions[i].answer = req.body.answer;
-        if (solution.questions[i].answer === question.modelAnswer) {
+        solution.questions[i].set(req.body);
+        await solution.save();
+        return res.status(200).send(solution);
+      }
+    }
+    solution.questions.push(req.body);
+    await solution.save();
+    res.status(200).send(solution);
+  }
+);
+
+router.post("/done/:courseId/:examId", auth, async (req, res, next) => {
+  let exam = await Exam.findById(req.params.examId).populate(
+    "questions.question"
+  );
+  if (!exam) return res.status(404).send("Exam not found");
+
+  let solution = await Solution.findOne({
+    quiz: exam._id,
+    student: req.user._id,
+  });
+  if (!solution) return res.status(404).send("Solution not found");
+
+  for (const i in solution.questions) {
+    for (const j in exam.questions) {
+      if (
+        solution.questions[i].question.toString() ===
+        exam.questions[j].question._id.toString()
+      ) {
+        if (
+          solution.questions[i].answer ===
+          exam.questions[j].question.modelAnswer
+        ) {
           solution.questions[i].correct = true;
-          solution.questions[i].mark = exam.questions[i].point;
+          solution.questions[i].mark = exam.questions[j].point;
           await solution.save();
-          return res.status(200).send(solution);
         } else {
           solution.questions[i].correct = false;
           solution.questions[i].mark = 0;
         }
       }
     }
-    await solution.save();
-    res.status(200).send(solution);
   }
-);
-
-router.put(
-  "/:courseId/:solutionId",
-  auth,
-  isStudent,
-  validate,
-  async (req, res, next) => {
-    let solution = await Solution.findById(req.params.solutionId);
-    if (!solution) return res.status(404).send("Sol not found");
-
-    let total = 0;
-    for (const i in solution.questions) {
-      total += solution.questions[i].mark;
-
-      solution.set({
-        status: "done",
-        totalMark: total,
-      });
-    }
-
-    await solution.save();
-    res.status(200).send({ Mark: solution.totalMark, Msg: "Good Luck" });
-  }
-);
+  await solution.save();
+  res.status(200).send(solution);
+});
 
 module.exports = router;
