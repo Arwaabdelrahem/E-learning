@@ -6,6 +6,8 @@ const { TorF } = require("../models/TorF");
 const { Question } = require("../models/question");
 const validate = require("./postValidation");
 const { Exam } = require("../models/exam");
+const { Solution } = require("../models/solution");
+
 //const models = require("../models");
 
 const router = express.Router();
@@ -94,9 +96,38 @@ router.delete(
     if (!question) return res.status(404).send("Question not found");
 
     let exam = await Exam.find({ "questions.question": req.params.questionId });
-    res.status(200).send(exam);
-    //await question.delete();
-    // res.status(204).send("Deleted");
+    let solution = await Solution.find({
+      "questions.question": req.params.questionId,
+    });
+
+    for (const i in exam) {
+      for (const j in exam[i].questions) {
+        if (
+          exam[i].questions[j].question.toString() ===
+          req.params.questionId.toString()
+        ) {
+          exam[i].questions.splice(j, 1);
+          await exam[i].save();
+          break;
+        }
+      }
+    }
+
+    for (const i in solution) {
+      for (const j in solution[i].questions) {
+        if (
+          solution[i].questions[j].question.toString() ===
+          req.params.questionId.toString()
+        ) {
+          solution[i].questions.splice(j, 1);
+          await solution[i].save();
+          break;
+        }
+      }
+    }
+
+    await question.delete();
+    res.status(204).send("Deleted");
   }
 );
 
