@@ -12,6 +12,9 @@ const teacherSchema = User.discriminator(
         ref: "Course",
       },
     ],
+    rating: {
+      type: Number,
+    },
   })
 );
 

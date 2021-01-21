@@ -20,6 +20,9 @@ const courseSchema = mongoose.Schema({
   finishingDate: {
     type: Date,
   },
+  rating: {
+    type: Number,
+  },
 });
 
 function courseValidation(course) {

@@ -39,7 +39,7 @@ router.get("/marks", auth, async (req, res, next) => {
 });
 
 router.post(
-  "/:courseId/:examId",
+  "/new/:courseId/:examId",
   auth,
   isStudent,
   validate,
@@ -75,6 +75,7 @@ router.post(
     let solution = await Solution.findOne({
       quiz: req.params.examId,
       student: req.user._id,
+      status: "solving",
     });
     if (!solution) return res.status(404).send("Solution not found");
 
@@ -96,7 +97,7 @@ router.post(
   }
 );
 
-router.post("/done/:courseId/:examId", auth, async (req, res, next) => {
+router.post("/done/:examId", auth, async (req, res, next) => {
   let exam = await Exam.findById(req.params.examId).populate(
     "questions.question"
   );
@@ -105,7 +106,7 @@ router.post("/done/:courseId/:examId", auth, async (req, res, next) => {
   let solution = await Solution.findOne({
     quiz: exam._id,
     student: req.user._id,
-  });
+  }).select("quiz questions");
   if (!solution) return res.status(404).send("Solution not found");
 
   for (const i in solution.questions) {
@@ -120,16 +121,19 @@ router.post("/done/:courseId/:examId", auth, async (req, res, next) => {
         ) {
           solution.questions[i].correct = true;
           solution.questions[i].mark = exam.questions[j].point;
-          await solution.save();
         } else {
           solution.questions[i].correct = false;
           solution.questions[i].mark = 0;
         }
+        break;
       }
     }
   }
+
+  solution.status = "done";
+  solution.submittedAt = new Date(new Date().toUTCString());
   await solution.save();
-  res.status(200).send(solution);
+  res.status(200).send({ Solution: solution, Mark: solution.mark });
 });
 
 module.exports = router;

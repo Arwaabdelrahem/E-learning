@@ -5,6 +5,7 @@ const { Choice } = require("../models/choice");
 const { TorF } = require("../models/TorF");
 const { Question } = require("../models/question");
 const validate = require("./postValidation");
+const { Exam } = require("../models/exam");
 //const models = require("../models");
 
 const router = express.Router();
@@ -27,7 +28,20 @@ router.post("/:courseId", auth, isTeacher, validate, async (req, res, next) => {
   req.body.course = req.params.courseId;
 
   // let type = req.body.type;
-  // let question = new models[type](req.body).save();
+  // //let question = new models[type](req.body).save();
+  // let question = new models.TorF(req.body).save();
+
+  let question;
+  if (req.body.choices) {
+    question = new Choice(req.body);
+
+    await question.save();
+    return res.status(201).send(question);
+  }
+
+  question = new TorF(req.body);
+  await question.save();
+
   res.status(201).send(question);
 });
 
@@ -79,8 +93,10 @@ router.delete(
     let question = await Question.findById(req.params.questionId);
     if (!question) return res.status(404).send("Question not found");
 
-    await question.delete();
-    res.status(204);
+    let exam = await Exam.find({ "questions.question": req.params.questionId });
+    res.status(200).send(exam);
+    //await question.delete();
+    // res.status(204).send("Deleted");
   }
 );
 
