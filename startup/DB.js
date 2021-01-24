@@ -4,7 +4,7 @@ const config = require("config");
 module.exports = function () {
   mongoose
     .connect(
-      "mongodb+srv://Arwaabdelrahem:mongo@cluster0.xse5n.mongodb.net/elearning?retryWrites=true&w=majority",
+      "mongodb+srv://Arwaabdelrahem:mongo@cluster0.xse5n.mongodb.net/ElearningDB?retryWrites=true&w=majority",
       {
         useNewUrlParser: true,
         useUnifiedTopology: true,

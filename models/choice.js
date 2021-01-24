@@ -1,6 +1,8 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
-const Joi = require("joi");
 const { Question } = require("./question");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const choiceSchema = Question.discriminator(
   "Choice",

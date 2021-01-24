@@ -1,12 +1,15 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const enrollSchema = mongoose.Schema({
   student: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Number,
     ref: "User",
   },
   course: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Number,
     ref: "Course",
   },
   status: {
@@ -16,6 +19,10 @@ const enrollSchema = mongoose.Schema({
   },
 });
 
-const Enrollment = mongoose.model("Enrollment", enrollSchema);
+enrollSchema.plugin(mongooseAutoIncrement.plugin, {
+  model: "Enrollment",
+  startAt: 1,
+});
 
+const Enrollment = mongoose.model("Enrollment", enrollSchema);
 module.exports.Enrollment = Enrollment;

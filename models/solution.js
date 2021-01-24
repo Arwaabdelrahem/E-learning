@@ -1,14 +1,17 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const pagination = require("mongoose-paginate-v2");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const solutionSchema = new mongoose.Schema(
   {
     quiz: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Number,
       ref: "Exam",
     },
     student: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Number,
       ref: "User",
     },
     status: {
@@ -23,7 +26,7 @@ const solutionSchema = new mongoose.Schema(
       new mongoose.Schema(
         {
           question: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Number,
             required: true,
             ref: "Question",
           },
@@ -51,6 +54,11 @@ solutionSchema.virtual("mark").get(function () {
 });
 
 solutionSchema.plugin(pagination);
+solutionSchema.plugin(mongooseAutoIncrement.plugin, {
+  model: "Solution",
+  startAt: 1,
+});
+
 const Solution = mongoose.model("Solution", solutionSchema);
 
 module.exports.Solution = Solution;

@@ -1,5 +1,8 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const pagination = require("mongoose-paginate-v2");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const postSchema = mongoose.Schema(
   {
@@ -11,7 +14,7 @@ const postSchema = mongoose.Schema(
         content: String,
         image: String,
         user: {
-          type: mongoose.Schema.Types.ObjectId,
+          type: Number,
           ref: "User",
         },
       },
@@ -20,11 +23,11 @@ const postSchema = mongoose.Schema(
       type: String,
     },
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Number,
       ref: "User",
     },
     course: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Number,
       ref: "Course",
     },
   },
@@ -32,6 +35,8 @@ const postSchema = mongoose.Schema(
 );
 
 postSchema.plugin(pagination);
+postSchema.plugin(mongooseAutoIncrement.plugin, { model: "Post", startAt: 1 });
+
 const Post = mongoose.model("Post", postSchema);
 
 module.exports.Post = Post;

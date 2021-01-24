@@ -28,7 +28,6 @@ router.post("/register", multer, async (req, res, next) => {
   if (student) return res.status(400).send("Student exists");
 
   let img;
-  console.log(req.files);
   if (req.files) {
     img = await cloud.cloudUpload(req.files[0].path);
     req.body.image = img.image;

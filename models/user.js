@@ -1,11 +1,13 @@
 const Joi = require("joi");
 Joi.objectId = require("joi-objectid")(Joi);
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const pagination = require("mongoose-paginate-v2");
 const config = require("config");
 const jwt = require("jsonwebtoken");
-
 const options = { discriminatorKey: "kind" };
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const userSchema = mongoose.Schema(
   {
@@ -60,6 +62,7 @@ userSchema.methods.generateToken = function () {
 };
 
 userSchema.plugin(pagination);
+userSchema.plugin(mongooseAutoIncrement.plugin, { model: "User", startAt: 1 });
 
 const User = mongoose.model("User", userSchema);
 

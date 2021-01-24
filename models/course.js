@@ -1,5 +1,8 @@
 const Joi = require("joi");
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const courseSchema = mongoose.Schema({
   code: {
@@ -35,6 +38,11 @@ function courseValidation(course) {
   });
   return schema.validate(course);
 }
+courseSchema.plugin(mongooseAutoIncrement.plugin, {
+  model: "Course",
+  startAt: 1,
+});
+
 const Course = mongoose.model("Course", courseSchema);
 
 module.exports.Course = Course;

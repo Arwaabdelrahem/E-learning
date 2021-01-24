@@ -1,14 +1,16 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const Joi = require("joi");
-
 const { User } = require("./user");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const teacherSchema = User.discriminator(
   "Teacher",
   mongoose.Schema({
     courses: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: "Course",
       },
     ],

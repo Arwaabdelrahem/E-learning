@@ -1,5 +1,8 @@
+const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const { User } = require("./user");
+
+mongooseAutoIncrement.initialize(mongoose.connection);
 
 const studentSchema = User.discriminator(
   "Student",
@@ -9,7 +12,7 @@ const studentSchema = User.discriminator(
     },
     myEnrollment: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: "Enrollment",
       },
     ],
