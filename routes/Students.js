@@ -3,7 +3,12 @@ const auth = require("../middleware/auth");
 const isStudent = require("../middleware/isStudent");
 const { Course } = require("../models/course");
 const { Enrollment } = require("../models/enrollment");
+const { Exam } = require("../models/exam");
 const { Solution } = require("../models/solution");
+const validate = require("./postValidation");
+const _ = require("lodash");
+const e = require("express");
+
 const router = express.Router();
 
 router.get("/myEnrollment", auth, isStudent, async (req, res, next) => {
@@ -29,6 +34,32 @@ router.get("/liveCourses", auth, isStudent, async (req, res, next) => {
 
   res.status(200).send(courses);
 });
+
+router.get(
+  "/modelAnswer/:courseId/:examId",
+  auth,
+  isStudent,
+  validate,
+  async (req, res, next) => {
+    let exam = await Exam.findById(req.params.examId).populate([
+      { path: "questions.question", select: "head modelAnswer" },
+    ]);
+    exam = exam.toJSON({ virtuals: true });
+
+    let solution = await Solution.findOne({
+      quiz: req.params.examId,
+      student: req.user._id,
+    });
+
+    let studentAnswer = [];
+    _.find(solution.questions, (q) => {
+      studentAnswer.push({ question: q.question, answer: q.answer });
+    });
+
+    exam.studentAnswer = studentAnswer;
+    res.status(200).json(exam);
+  }
+);
 
 router.post("/enroll/:courseId", auth, isStudent, async (req, res, next) => {
   const course = await Course.findById(req.params.courseId);

@@ -15,7 +15,9 @@ router.get("/:courseId", auth, validate, async (req, res, next) => {
     }),
   };
 
-  const exams = await Exam.find(query);
+  const exams = await Exam.find(query).populate([
+    { path: "questions.question", select: "head modelAnswer" },
+  ]);
   res.status(200).send(exams);
 });
 
