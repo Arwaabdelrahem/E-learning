@@ -41,9 +41,9 @@ router.get(
   isStudent,
   validate,
   async (req, res, next) => {
-    let exam = await Exam.findById(req.params.examId).populate([
-      { path: "questions.question", select: "head modelAnswer" },
-    ]);
+    let exam = await Exam.findById(req.params.examId)
+      .populate([{ path: "questions.question", select: "head modelAnswer" }])
+      .select("title questions");
     exam = exam.toJSON({ virtuals: true });
 
     let solution = await Solution.findOne({
@@ -56,6 +56,13 @@ router.get(
       studentAnswer.push({ question: q.question, answer: q.answer });
     });
 
+    _.find(exam.questions, (q) => {
+      delete q.id;
+      delete q.question._id;
+      delete q.question.id;
+    });
+
+    delete exam.id;
     exam.studentAnswer = studentAnswer;
     res.status(200).json(exam);
   }
