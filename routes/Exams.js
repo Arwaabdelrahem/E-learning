@@ -4,6 +4,8 @@ const validate = require("./postValidation");
 const isTeacher = require("../middleware/isTeacher");
 const { Exam } = require("../models/exam");
 const { Question } = require("../models/question");
+const _ = require("lodash");
+
 const router = express.Router();
 
 router.get("/:courseId", auth, validate, async (req, res, next) => {
@@ -58,10 +60,11 @@ router.post(
       point: req.body.point,
     };
 
-    for (const i in exam.questions) {
-      if (exam.questions[i].question.toString() === req.params.questionId)
-        return res.status(400).send("Question exists");
-    }
+    const eQuestion = _.findKey(exam.questions, (q) => {
+      if (q.question.toString() === req.params.questionId.toString())
+        return "index";
+    });
+    if (eQuestion) return res.status(400).send("Question exists");
 
     exam.questions.push(q);
     await exam.save();
@@ -81,15 +84,14 @@ router.delete(
     let question = await Question.findById(req.params.questionId);
     if (!question) return res.status(404).send("Question not found");
 
-    for (const i in exam.questions) {
-      if (
-        exam.questions[i].question.toString() ===
-        req.params.questionId.toString()
-      ) {
-        exam.questions.splice(i, 1);
-        await exam.save();
-        break;
-      }
+    const eQuestion = _.findKey(exam.questions, (q) => {
+      if (q.question.toString() === req.params.questionId.toString())
+        return "index";
+    });
+
+    if (eQuestion) {
+      exam.questions.splice(eQuestion, 1);
+      await exam.save();
     }
 
     res.status(200).send(exam);

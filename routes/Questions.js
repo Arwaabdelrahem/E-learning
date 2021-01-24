@@ -7,6 +7,7 @@ const { Question } = require("../models/question");
 const validate = require("./postValidation");
 const { Exam } = require("../models/exam");
 const { Solution } = require("../models/solution");
+const _ = require("lodash");
 
 //const models = require("../models");
 
@@ -101,28 +102,22 @@ router.delete(
     });
 
     for (const i in exam) {
-      for (const j in exam[i].questions) {
-        if (
-          exam[i].questions[j].question.toString() ===
-          req.params.questionId.toString()
-        ) {
-          exam[i].questions.splice(j, 1);
-          await exam[i].save();
-          break;
-        }
+      const eQuestion = _.findKey(exam[i].questions, (q) => {
+        if (q.question.toString() === req.params.questionId) return "index";
+      });
+      if (eQuestion) {
+        exam[i].questions.splice(eQuestion, 1);
+        await exam[i].save();
       }
     }
 
     for (const i in solution) {
-      for (const j in solution[i].questions) {
-        if (
-          solution[i].questions[j].question.toString() ===
-          req.params.questionId.toString()
-        ) {
-          solution[i].questions.splice(j, 1);
-          await solution[i].save();
-          break;
-        }
+      const sQuestion = _.findKey(solution[i].questions, (q) => {
+        if (q.question.toString() === req.params.questionId) return "index";
+      });
+      if (sQuestion) {
+        solution[i].questions.splice(sQuestion, 1);
+        await solution[i].save();
       }
     }
 

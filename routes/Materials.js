@@ -45,7 +45,7 @@ router.post("/:courseId", auth, isTeacher, multer, async (req, res, next) => {
   if (req.user.courses.indexOf(req.params.courseId) === -1) {
     return res.status(403).send("Forbidden");
   }
-  console.log(req.body);
+
   let material = new Material(req.body);
   await material.save();
 
