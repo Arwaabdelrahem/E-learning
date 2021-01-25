@@ -17,6 +17,7 @@ const solutionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["solving", "done"],
+      default: "solving",
     },
     submittedAt: {
       type: Date,
@@ -60,5 +61,4 @@ solutionSchema.plugin(mongooseAutoIncrement.plugin, {
 });
 
 const Solution = mongoose.model("Solution", solutionSchema);
-
 module.exports.Solution = Solution;

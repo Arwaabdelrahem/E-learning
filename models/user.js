@@ -3,7 +3,6 @@ Joi.objectId = require("joi-objectid")(Joi);
 const mongooseAutoIncrement = require("mongoose-auto-increment");
 const mongoose = require("mongoose");
 const pagination = require("mongoose-paginate-v2");
-const config = require("config");
 const jwt = require("jsonwebtoken");
 const options = { discriminatorKey: "kind" };
 
@@ -56,7 +55,7 @@ function logValidation(user) {
 userSchema.methods.generateToken = function () {
   const token = jwt.sign(
     { _id: this._id, enabled: this.enabled, kind: this.kind },
-    config.get("jwtprivateKey")
+    process.env.jwtprivateKey
   );
   return token;
 };

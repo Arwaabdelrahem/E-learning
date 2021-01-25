@@ -1,7 +1,6 @@
 const express = require("express");
 const { User, register, log } = require("../models/user");
 const { Student } = require("../models/student");
-const config = require("config");
 const multer = require("../middleware/multer");
 const cloud = require("../startup/cloudinary");
 const bcrypt = require("bcrypt");
@@ -42,7 +41,7 @@ router.post("/register", multer, async (req, res, next) => {
     service: "gmail",
     auth: {
       user: "arwaabdelrahem2@gmail.com",
-      pass: /*config.get("pass")*/ "Panda^%$",
+      pass: process.env.pass,
     },
   });
 

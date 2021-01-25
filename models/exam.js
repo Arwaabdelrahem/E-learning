@@ -53,6 +53,19 @@ function quizQuestionSchema() {
 
 examSchema.plugin(pagination);
 examSchema.plugin(mongooseAutoIncrement.plugin, { model: "Exam", startAt: 1 });
+examSchema.virtual("id").get(function () {
+  return parseInt(this._id);
+});
+examSchema.set("toJSON", {
+  virtuals: true,
+  transform: function (doc) {
+    return {
+      id: doc.id,
+      title: doc.title,
+      points: doc.points,
+    };
+  },
+});
 
 const Exam = mongoose.model("Exam", examSchema);
 

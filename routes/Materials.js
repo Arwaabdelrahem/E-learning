@@ -95,7 +95,7 @@ router.delete("/:materialId", auth, isTeacher, async (req, res, next) => {
 
   try {
     await material.delete();
-    res.status(200).send("Deleted successfully");
+    res.status(204).send("Deleted successfully");
   } catch (error) {
     res.status(400).send(error.message);
   }

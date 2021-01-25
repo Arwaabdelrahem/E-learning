@@ -102,9 +102,10 @@ router.delete(
     });
 
     for (const i in exam) {
-      const eQuestion = _.findKey(exam[i].questions, (q) => {
-        if (q.question.toString() === req.params.questionId) return "index";
+      const eQuestion = _.findKey(exam[i].questions, {
+        question: parseInt(req.params.questionId),
       });
+      console.log(eQuestion);
       if (eQuestion) {
         exam[i].questions.splice(eQuestion, 1);
         await exam[i].save();
@@ -112,8 +113,8 @@ router.delete(
     }
 
     for (const i in solution) {
-      const sQuestion = _.findKey(solution[i].questions, (q) => {
-        if (q.question.toString() === req.params.questionId) return "index";
+      const sQuestion = _.findKey(solution[i].questions, {
+        question: parseInt(req.params.questionId),
       });
       if (sQuestion) {
         solution[i].questions.splice(sQuestion, 1);

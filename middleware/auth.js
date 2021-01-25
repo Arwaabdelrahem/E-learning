@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const config = require("config");
 const { User } = require("../models/user");
 
 module.exports = async function (req, res, next) {
@@ -7,7 +6,7 @@ module.exports = async function (req, res, next) {
   if (!token) return res.status(401).send("Access denied. No token provided");
 
   try {
-    const decode = jwt.verify(token, config.get("jwtprivateKey"));
+    const decode = jwt.verify(token, process.env.jwtprivateKey);
 
     let user = await User.findById(decode._id);
     if (!user) return res.status(404).send("User Not found");
