@@ -4,7 +4,9 @@ const validate = require("./postValidation");
 const isTeacher = require("../middleware/isTeacher");
 const { Exam } = require("../models/exam");
 const { Question } = require("../models/question");
+const { Solution } = require("../models/solution");
 const _ = require("lodash");
+const moment = require("moment");
 
 const router = express.Router();
 
@@ -19,6 +21,34 @@ router.get("/:courseId", auth, validate, async (req, res, next) => {
     { path: "questions.question", select: "head modelAnswer" },
   ]);
   res.status(200).send(exams);
+});
+
+router.get("/:courseId/:examId", auth, validate, async (req, res, next) => {
+  let query = {
+    _id: req.params.examId,
+    ...(req.user.kind === "Student" && {
+      availability: true,
+    }),
+  };
+  let exam = await Exam.findOne(query);
+
+  let remainingTime;
+  if (req.user.kind === "Student") {
+    let solution = await Solution.findOne({
+      quiz: req.params.examId,
+      student: req.user._id,
+    });
+    if (!solution) return res.status(404).send("Solution not found");
+
+    remainingTime = moment(solution.createdAt)
+      .add(exam.duration, "m")
+      .diff(new Date(new Date().toUTCString()), "s");
+  }
+
+  exam = exam.toJSON({ virtuals: true });
+
+  exam.remainingTime = remainingTime;
+  res.status(200).send(exam);
 });
 
 router.post("/:courseId", auth, isTeacher, validate, async (req, res, next) => {

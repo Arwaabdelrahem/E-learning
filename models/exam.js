@@ -19,6 +19,9 @@ const examSchema = new mongoose.Schema(
       type: Number,
       ref: "Course",
     },
+    duration: {
+      type: Number,
+    },
   },
   { timestamps: true, discriminatorKey: "kind" }
 );
