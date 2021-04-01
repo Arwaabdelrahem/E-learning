@@ -11,12 +11,8 @@ const postSchema = mongoose.Schema(
     },
     comments: [
       {
-        content: String,
-        image: String,
-        user: {
-          type: Number,
-          ref: "User",
-        },
+        type: Number,
+        ref: "Comment",
       },
     ],
     image: {
@@ -34,9 +30,22 @@ const postSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+postSchema.set("toJSON", {
+  virtuals: true,
+  transform: function (doc) {
+    return {
+      id: doc.id,
+      content: doc.content,
+      image: doc.image,
+      comments: doc.comments,
+      user: doc.user,
+      course: doc.course,
+    };
+  },
+});
+
 postSchema.plugin(pagination);
 postSchema.plugin(mongooseAutoIncrement.plugin, { model: "Post", startAt: 1 });
 
 const Post = mongoose.model("Post", postSchema);
-
 module.exports.Post = Post;
