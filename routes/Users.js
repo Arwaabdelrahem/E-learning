@@ -62,7 +62,8 @@ router.post("/register", multer, async (req, res, next) => {
 
   try {
     req.body.emailVerifingCode = code;
-    student = new Student(req.body).save();
+    student = new Student(req.body);
+    await student.save();
     if (req.files) fs.unlinkSync(req.files[0].path);
     res.status(201).send(student);
   } catch (error) {
