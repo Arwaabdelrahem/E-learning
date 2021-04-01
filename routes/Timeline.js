@@ -1,6 +1,7 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 const { Post } = require("../models/post");
+const { Comment } = require("../models/comment");
 const multer = require("../middleware/multer");
 const cloud = require("../startup/cloudinary");
 const validate = require("./postValidation");
@@ -15,7 +16,7 @@ router.get("/:courseId", auth, validate, async (req, res, next) => {
     {
       populate: [
         { path: "user", select: "name" },
-        { path: "comments.user", select: "name" },
+        { path: "comments", select: "content user" },
       ],
     }
   );
@@ -30,10 +31,9 @@ router.post(
   validate,
   async (req, res, next) => {
     let img;
-    if (req.files.length != 0) {
+    if (req.files.length !== 0) {
       img = await cloud.cloudUpload(req.files[0].path);
       req.body.image = img.image;
-      console.log(img, req.files);
     }
 
     req.body.course = req.params.courseId;
@@ -41,7 +41,7 @@ router.post(
 
     const post = new Post(req.body);
     await post.save();
-    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+    if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
     await Post.populate(post, [
       { path: "user", select: "name" },
       { path: "comments.user", select: "name" },
@@ -50,35 +50,12 @@ router.post(
   }
 );
 
-router.get("/:postId", auth, validate, async (req, res, next) => {
-  const posts = await Post.findOne({
+router.get("/:courseId/:postId", auth, validate, async (req, res, next) => {
+  const post = await Post.findOne({
     _id: req.params.postId,
+    course: req.params.courseId,
   });
 
-  await Post.populate(post, [
-    { path: "user", select: "name" },
-    { path: "comments.user", select: "name" },
-  ]);
-  res.status(200).send(posts);
-});
-
-router.put("/:postId", auth, validate, multer, async (req, res, next) => {
-  let post = await Post.findById(req.params.postId);
-  if (!post) return res.status(404).send("post not found");
-
-  if (post.user.toString() !== req.user._id.toString())
-    return res.status(403).send("Only the post author can update");
-
-  let img;
-  if (req.files.length !== 0) {
-    img = await cloud.cloudUpload(req.files[0].path);
-    req.body.image = img.image;
-  }
-
-  post = post.set(req.body);
-
-  await post.save();
-  if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
   await Post.populate(post, [
     { path: "user", select: "name" },
     { path: "comments.user", select: "name" },
@@ -86,7 +63,37 @@ router.put("/:postId", auth, validate, multer, async (req, res, next) => {
   res.status(200).send(post);
 });
 
-router.delete("/:postId", auth, validate, async (req, res, next) => {
+router.put(
+  "/:courseId/:postId",
+  auth,
+  validate,
+  multer,
+  async (req, res, next) => {
+    let post = await Post.findById(req.params.postId);
+    if (!post) return res.status(404).send("post not found");
+
+    if (post.user.toString() !== req.user._id.toString())
+      return res.status(403).send("Only the post author can update");
+
+    let img;
+    if (req.files.length !== 0) {
+      img = await cloud.cloudUpload(req.files[0].path);
+      req.body.image = img.image;
+    }
+
+    post = post.set(req.body);
+
+    await post.save();
+    if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
+    await Post.populate(post, [
+      { path: "user", select: "name" },
+      { path: "comments.user", select: "name" },
+    ]);
+    res.status(200).send(post);
+  }
+);
+
+router.delete("/:courseId/:postId", auth, validate, async (req, res, next) => {
   let post = await Post.findById(req.params.postId);
   if (!post) return res.status(404).send("Post already doesnt exists");
 
@@ -95,15 +102,15 @@ router.delete("/:postId", auth, validate, async (req, res, next) => {
       return res.status(403).send("Only author can delete the post");
 
     await post.delete();
-    return res.status(200).send("post deleted");
+    return res.status(204).send("post deleted");
   }
   await post.delete();
-  res.status(200).send("post deleted");
+  res.status(204).send("post deleted");
 });
 
 //Create, Update, Delete Comments
 router.post(
-  "/:courseId/:postId",
+  "/comment/:courseId/:postId",
   auth,
   validate,
   multer,
@@ -117,76 +124,92 @@ router.post(
       req.body.image = img.image;
     }
     req.body.user = req.user._id;
-    const comment = req.body;
+    req.body.post = post._id;
 
-    await post.comments.push(comment);
+    const comment = new Comment(req.body);
     if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
+    await comment.save();
+
     await Post.populate(post, [
       { path: "user", select: "name" },
       { path: "comments.user", select: "name" },
     ]);
+
+    await post.comments.push(comment._id);
     post = await post.save();
     res.status(201).send(post);
   }
 );
 
 router.put(
-  "/:courseId/:postId/:commentId",
+  "/comment/:courseId/:postId/:commentId",
   auth,
   validate,
   multer,
   async (req, res, next) => {
-    let post = await Post.findById(req.params.postId).populate([
+    let post = await Post.findOne({
+      _id: req.params.postId,
+    }).populate([
       { path: "user", select: "name" },
-      { path: "comments.user", select: "name" },
+      { path: "comments", select: " _id content" },
     ]);
     if (!post) return res.status(404).send("Post not found");
 
     let img;
-    if (req.files.length != 0) {
+    if (req.files.length !== 0) {
       img = await cloud.cloudUpload(req.files[0].path);
       req.body.image = img.image;
     }
 
-    for (const i in post.comments) {
-      if (post.comments[i]._id.toString() !== req.params.commentId.toString()) {
-        return res.status(404).send("comment not found");
-      }
+    let comment = await Comment.findById(req.params.commentId).populate({
+      path: "user",
+      select: " _id name",
+    });
+    if (!comment) return res.status(404).send("Comment not found");
 
-      if (post.comments[i].user._id.toString() === req.user._id.toString()) {
-        post.comments[i].set(req.body);
+    if (comment.user._id.toString() === req.user._id.toString()) {
+      comment.set(req.body);
 
-        if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
-        await post.save();
-        return res.status(200).send(post.comments);
-      }
+      if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
+      await comment.save();
+      return res.status(200).send(comment);
+    } else {
+      res.status(403).send("Only comment author can update");
     }
-    res.status(403).send("Only comment author can update");
   }
 );
 
 router.delete(
-  "/:courseId/:postId/:commentId",
+  "/comment/:courseId/:postId/:commentId",
   auth,
   validate,
   async (req, res, next) => {
-    let post = await Post.findById(req.params.postId);
+    let post = await Post.findById(req.params.postId).populate([
+      { path: "user", select: "name" },
+      { path: "comments", select: " _id content" },
+    ]);
     if (!post) return res.status(404).send("Post already doesnt exists");
 
-    for (const i in post.comments) {
-      if (post.comments[i]._id == req.params.commentId) {
-        if (
-          post.comments[i].user._id.toString() !== req.user._id.toString() &&
-          req.user.kind == "Student"
-        ) {
-          return res.status(403).send("Only comment author can delete ");
-        }
+    let comment = await Comment.findById(req.params.commentId).populate({
+      path: "user",
+      select: " _id name",
+    });
+    if (!comment) return res.status(404).send("Comment already doesnt exists");
 
-        post.comments.splice(i, 1);
-        await post.save();
-        res.status(200).send({ msg: "comment deleted", post: post });
-      }
+    if (
+      comment.user._id.toString() !== req.user._id.toString() &&
+      req.user.kind == "Student"
+    ) {
+      return res.status(403).send("Only comment author can delete ");
     }
+
+    await comment.delete();
+    for (const i in post.comments) {
+      if (post.comments[i]._id.toString() === req.params.commentId)
+        post.comments.splice(i, 1);
+      await post.save();
+    }
+    res.status(200).send({ msg: "comment deleted", post: post });
   }
 );
 
