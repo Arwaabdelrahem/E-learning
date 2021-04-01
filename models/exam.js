@@ -61,8 +61,11 @@ examSchema.set("toJSON", {
   transform: function (doc) {
     return {
       id: doc.id,
+      course: doc.course,
       title: doc.title,
+      availability: doc.availability,
       points: doc.points,
+      questions: doc.questions,
     };
   },
 });
