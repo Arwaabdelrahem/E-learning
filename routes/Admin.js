@@ -8,11 +8,11 @@ const router = express.Router();
 
 router.get("/students", auth, isAdmin, async (req, res, next) => {
   let students;
-  if (req.params.status) {
-    const text = "^" + req.body.search;
+  if (req.query.search) {
+    const text = req.query.search;
     const Regex = new RegExp(text, "gi");
     students = await User.find({
-      name: req.params.status == "" ? /^$|/ : Regex,
+      name: req.query.search == "" ? /^$|/ : Regex,
       kind: "Student",
     });
 
