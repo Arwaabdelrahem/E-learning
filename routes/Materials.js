@@ -34,6 +34,10 @@ router.post("/:courseId", auth, isTeacher, multer, async (req, res, next) => {
   if (!course) return res.status(404).send("Course not found");
   req.body.course = req.params.courseId;
 
+  if (req.user.courses.indexOf(req.params.courseId) === -1) {
+    return res.status(403).send("Forbidden");
+  }
+
   let img;
   if (req.files.length != 0) {
     img = await cloud.cloudUpload(req.files[0].path);
@@ -42,11 +46,8 @@ router.post("/:courseId", auth, isTeacher, multer, async (req, res, next) => {
 
   req.body.type = img ? "Image" : "videoLink";
 
-  if (req.user.courses.indexOf(req.params.courseId) === -1) {
-    return res.status(403).send("Forbidden");
-  }
-
   let material = new Material(req.body);
+  material.link = req.body.image;
   await material.save();
 
   try {
@@ -69,10 +70,12 @@ router.put("/:materialId", auth, isTeacher, multer, async (req, res, next) => {
   let img;
   if (req.files.length !== 0) {
     img = await cloud.cloudUpload(req.files[0].path);
-    req.body.link = img.image;
+    req.body.image = img.image;
   }
 
   req.body.type = img ? "Image" : "videoLink";
+
+  material.link = req.body.image;
   material = material.set(req.body);
   await material.save();
 
@@ -89,7 +92,7 @@ router.delete("/:materialId", auth, isTeacher, async (req, res, next) => {
   let material = await Material.findById(req.params.materialId);
   if (!material) return res.status(404).send("Material Not found");
 
-  if (req.user.courses.indexOf(req.params.courseId) === -1) {
+  if (req.user.courses.indexOf(material.course) === -1) {
     return res.status(403).send("Forbidden");
   }
 
