@@ -7,7 +7,9 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 router.get("/myCourses", auth, isTeacher, async (req, res, next) => {
-  await Teacher.populate(req.user, [{ path: "courses", select: "name code" }]);
+  await Teacher.populate(req.user, [
+    { path: "courses", select: "name code description" },
+  ]);
 
   res.status(200).send(req.user.courses);
 });
@@ -93,4 +95,5 @@ router.delete("/:courseId", auth, isTeacher, async (req, res, next) => {
     res.status(400).send(error.message);
   }
 });
+
 module.exports = router;
