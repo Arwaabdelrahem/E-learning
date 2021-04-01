@@ -1,6 +1,7 @@
 const { Course } = require("../models/course");
 const { Teacher } = require("../models/teacher");
 const { Rate } = require("../models/rate");
+
 exports.newRate = async (req, res, next) => {
   const path = req.route.path.split("/");
   let subjectType = path[1] === "teachers" ? "Teacher" : "Course";
