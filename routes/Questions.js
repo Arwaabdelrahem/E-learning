@@ -9,8 +9,6 @@ const { Exam } = require("../models/exam");
 const { Solution } = require("../models/solution");
 const _ = require("lodash");
 
-//const models = require("../models");
-
 const router = express.Router();
 
 router.get("/:courseId", auth, validate, async (req, res, next) => {
@@ -29,10 +27,6 @@ router.get("/:courseId", auth, validate, async (req, res, next) => {
 router.post("/:courseId", auth, isTeacher, validate, async (req, res, next) => {
   req.body.addedBy = req.user._id;
   req.body.course = req.params.courseId;
-
-  // let type = req.body.type;
-  // //let question = new models[type](req.body).save();
-  // let question = new models.TorF(req.body).save();
 
   let question;
   if (req.body.choices) {
