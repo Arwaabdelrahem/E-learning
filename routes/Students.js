@@ -20,8 +20,8 @@ router.get("/myEnrollment", auth, isStudent, async (req, res, next) => {
   };
 
   const enrollment = await Enrollment.find(query)
-    .select("course status")
-    .populate([{ path: "course", select: "name" }]);
+    .select("course status ")
+    .populate([{ path: "course", select: "name code" }]);
 
   res.status(200).send(enrollment);
 });
@@ -68,12 +68,10 @@ router.get(
   }
 );
 
-router.post("/enroll/:courseId", auth, isStudent, async (req, res, next) => {
-  const course = await Course.findById(req.params.courseId);
-  if (!course) return res.status(404).send("Course Not foud");
-
-  if (course.code !== req.body.code)
-    return res.status(400).send("please enter valid code");
+router.post("/enroll", auth, isStudent, async (req, res, next) => {
+  const course = await Course.findOne({ code: req.query.code });
+  if (!course)
+    return res.status(404).send("Course Not found, please enter valid code");
 
   let enroll = await Enrollment.findOne({
     student: req.user._id,
