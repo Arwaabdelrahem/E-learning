@@ -46,7 +46,6 @@ router.get("/:courseId/:examId", auth, validate, async (req, res, next) => {
   }
 
   exam = exam.toJSON();
-
   exam.remainingTime = remainingTime;
   res.status(200).send(exam);
 });
