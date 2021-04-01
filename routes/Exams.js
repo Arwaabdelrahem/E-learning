@@ -45,7 +45,7 @@ router.get("/:courseId/:examId", auth, validate, async (req, res, next) => {
       .diff(new Date(new Date().toUTCString()), "s");
   }
 
-  exam = exam.toJSON({ virtuals: true });
+  exam = exam.toJSON();
 
   exam.remainingTime = remainingTime;
   res.status(200).send(exam);
