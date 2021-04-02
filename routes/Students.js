@@ -35,7 +35,7 @@ router.get("/liveCourses", auth, isStudent, async (req, res, next) => {
   res.status(200).send(courses);
 });
 
-router.get("/notLive", auth, isStudent, async (req, res, next) => {
+router.get("/notLiveCourses", auth, isStudent, async (req, res, next) => {
   const courses = await Course.find({
     $or: [
       { finishingDate: { $lte: new Date(new Date().toUTCString()) } },
