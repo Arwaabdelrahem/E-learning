@@ -6,6 +6,7 @@ const multer = require("../middleware/multer");
 const cloud = require("../startup/cloudinary");
 const validate = require("./postValidation");
 const fs = require("fs");
+const timelineCntrl = require("../controllers/timeline");
 
 const router = express.Router();
 
@@ -114,31 +115,7 @@ router.post(
   auth,
   validate,
   multer,
-  async (req, res, next) => {
-    let post = await Post.findById(req.params.postId);
-    if (!post) return res.status(404).send("Post not found");
-
-    let img;
-    if (req.files.length != 0) {
-      img = await cloud.cloudUpload(req.files[0].path);
-      req.body.image = img.image;
-    }
-    req.body.user = req.user._id;
-    req.body.post = post._id;
-
-    const comment = new Comment(req.body);
-    if (req.files.length != 0) fs.unlinkSync(req.files[0].path);
-    await comment.save();
-
-    await Post.populate(post, [
-      { path: "user", select: "name" },
-      { path: "comments.user", select: "name" },
-    ]);
-
-    await post.comments.push(comment._id);
-    post = await post.save();
-    res.status(201).send(post);
-  }
+  timelineCntrl.newComment
 );
 
 router.put(

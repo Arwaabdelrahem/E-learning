@@ -6,6 +6,7 @@ const validate = require("./postValidation");
 const { Solution } = require("../models/solution");
 const { Question } = require("../models/question");
 const { Exam } = require("../models/exam");
+const solutionCntrl = require("../controllers/solutions");
 const router = express.Router();
 
 router.get(
@@ -97,43 +98,6 @@ router.post(
   }
 );
 
-router.post("/done/:examId", auth, async (req, res, next) => {
-  let exam = await Exam.findById(req.params.examId).populate(
-    "questions.question"
-  );
-  if (!exam) return res.status(404).send("Exam not found");
-
-  let solution = await Solution.findOne({
-    quiz: exam._id,
-    student: req.user._id,
-  }).select("quiz questions");
-  if (!solution) return res.status(404).send("Solution not found");
-
-  for (const i in solution.questions) {
-    for (const j in exam.questions) {
-      if (
-        solution.questions[i].question.toString() ===
-        exam.questions[j].question._id.toString()
-      ) {
-        if (
-          solution.questions[i].answer ===
-          exam.questions[j].question.modelAnswer
-        ) {
-          solution.questions[i].correct = true;
-          solution.questions[i].mark = exam.questions[j].point;
-        } else {
-          solution.questions[i].correct = false;
-          solution.questions[i].mark = 0;
-        }
-        break;
-      }
-    }
-  }
-
-  solution.status = "done";
-  solution.submittedAt = new Date(new Date().toUTCString());
-  await solution.save();
-  res.status(200).send({ Solution: solution, Mark: solution.mark });
-});
+router.post("/done/:examId", auth, solutionCntrl.correctExam);
 
 module.exports = router;
