@@ -7,7 +7,6 @@ const { Exam } = require("../models/exam");
 const { Solution } = require("../models/solution");
 const validate = require("./postValidation");
 const _ = require("lodash");
-const e = require("express");
 
 const router = express.Router();
 

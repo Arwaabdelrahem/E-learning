@@ -67,7 +67,7 @@ router.post("/register", multer, async (req, res, next) => {
     if (req.files) fs.unlinkSync(req.files[0].path);
     res.status(201).send(student);
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 
@@ -85,7 +85,7 @@ router.post("/verifyCode", async (req, res, next) => {
       res.status(200).send(user);
     }
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 

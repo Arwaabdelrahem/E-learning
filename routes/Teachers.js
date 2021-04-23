@@ -61,7 +61,7 @@ router.put("/:courseId", auth, isTeacher, async (req, res, next) => {
   try {
     res.status(200).send(course);
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 
@@ -92,7 +92,7 @@ router.delete("/:courseId", auth, isTeacher, async (req, res, next) => {
   try {
     res.status(200).send(req.user);
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 
