@@ -56,7 +56,7 @@ exports.newRate = async (req, res, next) => {
   await obj.save();
   await Rate.populate(rate, [
     { path: "user", select: "name" },
-    { path: " subject", select: "name rating" },
+    { path: "subject", select: "name rating" },
   ]);
   res.status(200).send(rate);
 };
@@ -71,7 +71,7 @@ exports.fetchAll = async (req, res, next) => {
       sort: "-createdAt",
       populate: [
         { path: "user", select: "name" },
-        { path: " subject", select: "name rating" },
+        { path: "subject", select: "name rating" },
       ],
     }
   );
