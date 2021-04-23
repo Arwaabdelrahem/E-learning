@@ -11,6 +11,7 @@ const question = require("../routes/Questions");
 const exam = require("../routes/Exams");
 const solution = require("../routes/Solutions");
 const rate = require("../routes/Rate");
+const notifications = require('../routes/Notification')
 const { errorHandler, serverErrorHandler } = require("../middleware/error");
 
 module.exports = function (app) {
@@ -28,6 +29,7 @@ module.exports = function (app) {
   app.use("/solutions", solution);
   app.use("/rates", rate);
   app.use("/timeline", timeline);
+  app.use(notifications)
   app.use(errorHandler);
   app.use(serverErrorHandler);
 };

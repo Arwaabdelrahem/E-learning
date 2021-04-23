@@ -23,6 +23,15 @@ router.get("/students", auth, isAdmin, async (req, res, next) => {
   }
 });
 
+
+
+router.get("/test", async (req, res, next) => {
+  let user = await User.findOne()
+  await user.set({enabled: true}).save()
+  return res.json(user)
+});
+
+
 router.post("/addTeacher", auth, isAdmin, async (req, res, next) => {
   const { error } = teacherValidate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
