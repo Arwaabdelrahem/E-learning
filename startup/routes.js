@@ -1,6 +1,4 @@
-const cors = require("cors");
 const express = require("express");
-const bodyParser = require("body-parser");
 const admin = require("../routes/Admin");
 const user = require("../routes/Users");
 const teacher = require("../routes/Teachers");
@@ -11,14 +9,14 @@ const question = require("../routes/Questions");
 const exam = require("../routes/Exams");
 const solution = require("../routes/Solutions");
 const rate = require("../routes/Rate");
-const notifications = require('../routes/Notification')
+const notifications = require("../routes/Notification");
+const conversations = require("../routes/Conversations");
 const { errorHandler, serverErrorHandler } = require("../middleware/error");
 
 module.exports = function (app) {
-  app.use(cors());
   app.use("Uploads", express.static("Uploads"));
-  app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(bodyParser.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
   app.use("/admin", admin);
   app.use("/users", user);
   app.use("/teachers", teacher);
@@ -29,7 +27,8 @@ module.exports = function (app) {
   app.use("/solutions", solution);
   app.use("/rates", rate);
   app.use("/timeline", timeline);
-  app.use(notifications)
+  app.use(notifications);
+  app.use(conversations);
   app.use(errorHandler);
   app.use(serverErrorHandler);
 };
