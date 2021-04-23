@@ -1,12 +1,12 @@
 const express = require("express");
 const { Material } = require("../models/material");
-const { Course } = require("../models/course");
 const cloud = require("../startup/cloudinary");
 const isTeacher = require("../middleware/isTeacher");
 const multer = require("../middleware/multer");
 const fs = require("fs");
 const auth = require("../middleware/auth");
 const { Enrollment } = require("../models/enrollment");
+const materialCntrl = require("../controllers/materials");
 const router = express.Router();
 
 router.get("/:courseId", auth, async (req, res, next) => {
@@ -29,35 +29,7 @@ router.get("/:courseId", auth, async (req, res, next) => {
   res.status(200).send(materials);
 });
 
-router.post("/:courseId", auth, isTeacher, multer, async (req, res, next) => {
-  const course = await Course.findById(req.params.courseId);
-  if (!course) return res.status(404).send("Course not found");
-  req.body.course = req.params.courseId;
-
-  if (req.user.courses.indexOf(req.params.courseId) === -1) {
-    return res.status(403).send("Forbidden");
-  }
-
-  let img;
-  if (req.files.length != 0) {
-    img = await cloud.cloudUpload(req.files[0].path);
-    req.body.image = img.image;
-  }
-
-  req.body.type = img ? "Image" : "videoLink";
-
-  let material = new Material(req.body);
-  material.link = req.body.image;
-  await material.save();
-
-  try {
-    if (req.files.length !== 0) fs.unlinkSync(req.files[0].path);
-    await Material.populate(material, [{ path: "course", select: "name" }]);
-    res.status(201).send(material);
-  } catch (error) {
-    res.status(400).send(error.message);
-  }
-});
+router.post("/:courseId", auth, isTeacher, multer, materialCntrl.newMaterial);
 
 router.put("/:materialId", auth, isTeacher, multer, async (req, res, next) => {
   let material = await Material.findById(req.params.materialId);
@@ -84,7 +56,7 @@ router.put("/:materialId", auth, isTeacher, multer, async (req, res, next) => {
     await Material.populate(material, [{ path: "course", select: "name" }]);
     res.status(201).send(material);
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 
@@ -100,7 +72,7 @@ router.delete("/:materialId", auth, isTeacher, async (req, res, next) => {
     await material.delete();
     res.status(204).send("Deleted successfully");
   } catch (error) {
-    res.status(400).send(error.message);
+    next(error);
   }
 });
 
