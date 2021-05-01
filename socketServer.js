@@ -33,18 +33,21 @@ module.exports = {
 
           // find prev conversation
           let conversation = await Conversation.findOne({
-            $or: [{ users: [_id, data.to] }, { users: [data.to, _id] }],
+            $or: [{ users: [_id, data.toUser] }, { users: [data.toUser, _id] }],
           });
+
           // if not create one
           if (!conversation) {
             conversation = await new Conversation({
-              users: [_id, data.to],
+              users: [_id, data.toUser],
+              conversationType: "P2P",
               meta: [
                 { user: _id, countOfUnseenMessages: 0 },
-                { user: data.to, countOfUnseenMessages: 0 },
+                { user: data.toUser, countOfUnseenMessages: 0 },
               ],
             }).save();
           }
+
           // save message to db
           const createdMessage = await new Message({
             user: _id,
@@ -59,14 +62,15 @@ module.exports = {
             else info.countOfUnseenMessages++;
           });
           await conversation.save();
+
           // emit message
-          chatNamespace.to(`user ${data.to}`).emit("new message", {
+          chatNamespace.to(`user ${data.toUser}`).emit("new message", {
             conversation,
             message: data,
           });
 
           // Send Notification in-app
-          const clients = await User.findOne({ _id: data.to });
+          const clients = await User.findOne({ _id: data.toUser });
           const notification = await new Notification({
             title: `New Message`,
             body: data.content,
@@ -78,6 +82,63 @@ module.exports = {
 
           // push notifications
           await clients.sendNotification(notification.toFirebaseNotification());
+        });
+
+        socket.on("group", async function (data) {
+          if (!data.content && !data.attachment) return;
+
+          const { _id } = socket.decoded_token;
+          console.log("HERE", _id);
+
+          // find prev conversation
+          let conversation = await Conversation.findOne({
+            _id: data.toConversation,
+          });
+          // if not create one
+          if (!conversation) return;
+
+          // save message to db
+          const createdMessage = await new Message({
+            user: _id,
+            content: data.content,
+            attachment: data.attachment,
+            conversation: conversation.id,
+          }).save();
+
+          conversation.lastMessage = createdMessage.id;
+          conversation.meta.forEach((info) => {
+            if (info.user === _id) info.countOfUnseenMessages = 0;
+            else info.countOfUnseenMessages++;
+          });
+          await conversation.save();
+
+          // emit message
+          for (const i in conversation.users) {
+            console.log(conversation.users[i]);
+            if (conversation.users[i].toString() === _id.toString()) continue;
+            chatNamespace
+              .to(`user ${conversation.users[i]}`)
+              .emit("new message", {
+                conversation,
+                message: data,
+              });
+
+            // Send Notification in-app
+            const clients = await User.findOne({ _id: conversation.users[i] });
+            const notification = await new Notification({
+              title: `New Message`,
+              body: data.content,
+              user: _id,
+              targetUsers: clients,
+              subjectType: "Message",
+              subject: createdMessage._id,
+            }).save();
+
+            // push notifications
+            await clients.sendNotification(
+              notification.toFirebaseNotification()
+            );
+          }
         });
       });
 

@@ -1,5 +1,4 @@
 const Joi = require("joi");
-const { join } = require("lodash");
 const mongoose = require("mongoose");
 const mongooseAutoIncrement = require("mongoose-auto-increment");
 const pagination = require("mongoose-paginate-v2");
@@ -8,7 +7,7 @@ mongooseAutoIncrement.initialize(mongoose.connection);
 
 const conversationSchema = new mongoose.Schema(
   {
-    name: {
+    grpName: {
       type: String, // in case of more than 2 users
     },
     image: {
@@ -18,6 +17,8 @@ const conversationSchema = new mongoose.Schema(
       {
         type: Number,
         ref: "User",
+        required: true,
+        unique: true,
       },
     ],
     owner: {
@@ -31,11 +32,11 @@ const conversationSchema = new mongoose.Schema(
     },
     course: {
       type: Number,
-      ref: "course",
+      ref: "Course",
     },
     lastMessage: {
       type: Number,
-      ref: "message",
+      ref: "Message",
     },
     meta: [metaSchema()],
   },
@@ -47,13 +48,13 @@ conversationSchema.methods.containUser = function (userID) {
   return false;
 };
 
-schema.set("toJSON", {
+conversationSchema.set("toJSON", {
   virtuals: true,
   transform: function (doc) {
     return {
       id: doc.id,
       conversationType: doc.conversationType,
-      name: doc.name,
+      grpName: doc.grpName,
       owner: doc.owner,
       users: doc.users,
       course: doc.course,
@@ -95,29 +96,29 @@ function metaSchema() {
 
 function PRIVATE(conversation) {
   const schema = Joi.object({
-    name: Joi.forbidden(),
+    grpName: Joi.forbidden(),
     image: Joi.forbidden(),
-    uesrs: Joi.array().unique().min(2).required(),
+    users: Joi.array().unique().min(2).required(),
   });
   return schema.validate(conversation);
 }
 
 function GROUP(conversation) {
   const schema = Joi.object({
-    name: Joi.string().required(),
+    grpName: Joi.string(),
     image: Joi.string(),
-    uesrs: Joi.array().unique().min(2).required(),
+    users: Joi.array().unique().required(),
   });
   return schema.validate(conversation);
 }
 
-schema.plugin(pagination);
-schema.plugin(mongooseAutoIncrement.plugin, {
+conversationSchema.plugin(pagination);
+conversationSchema.plugin(mongooseAutoIncrement.plugin, {
   model: "Conversation",
   startAt: 1,
 });
 
-const Conversation = mongoose.model("Conversation", schema);
+const Conversation = mongoose.model("Conversation", conversationSchema);
 module.exports.Conversation = Conversation;
 module.exports.PRIVATE = PRIVATE;
 module.exports.GROUP = GROUP;

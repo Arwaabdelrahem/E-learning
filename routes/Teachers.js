@@ -4,6 +4,7 @@ const { Teacher } = require("../models/teacher");
 const isTeacher = require("../middleware/isTeacher");
 const { Enrollment } = require("../models/enrollment");
 const auth = require("../middleware/auth");
+const { Conversation, GROUP } = require("../models/conversation");
 const router = express.Router();
 
 router.get("/myCourses", auth, isTeacher, async (req, res, next) => {
@@ -44,8 +45,17 @@ router.post("/newCourse", auth, isTeacher, async (req, res, next) => {
   req.user.courses.push(course._id);
   await req.user.save();
 
+  const conversation = await new Conversation({
+    grpName: course.name,
+    users: req.user._id,
+    owner: req.user._id,
+    conversationType: "GROUP",
+    meta: [{ user: req.user._id, countOfUnseenMessages: 0 }],
+  });
+  await conversation.save();
+
   await Teacher.populate(req.user, [{ path: "courses", select: "name" }]);
-  res.status(201).send({ Course: course, Teacher: req.user });
+  res.status(201).send({ Course: course, Teacher: req.user, conversation });
 });
 
 router.put("/:courseId", auth, isTeacher, async (req, res, next) => {
@@ -74,7 +84,22 @@ router.put("/status/:enrollmentId", auth, isTeacher, async (req, res, next) => {
     return res.status(400).send("No student enrolled with given ID");
 
   await enrollment.set(req.body).save();
-  res.status(200).send(enrollment);
+
+  if (enrollment.status === "accepted") {
+    let conv = await Conversation.findOne({
+      grpName: enrollment.course.name,
+      conversationType: "GROUP",
+    });
+    if (!conv) return res.status(404).send("Conversation not found");
+
+    await conv.users.push(enrollment.student._id);
+    await conv.meta.push({
+      user: enrollment.student._id,
+      countOfUnseenMessages: 0,
+    });
+    await conv.save();
+  }
+  res.status(200).send({ enrollment });
 });
 
 router.delete("/:courseId", auth, isTeacher, async (req, res, next) => {
