@@ -1,4 +1,4 @@
-const Joi = require("joi");
+//const Joi = require("joi");
 const mongoose = require("mongoose");
 const mongooseAutoIncrement = require("mongoose-auto-increment");
 const pagination = require("mongoose-paginate-v2");
@@ -18,7 +18,6 @@ const conversationSchema = new mongoose.Schema(
         type: Number,
         ref: "User",
         required: true,
-        unique: true,
       },
     ],
     owner: {
@@ -94,24 +93,6 @@ function metaSchema() {
   return schema;
 }
 
-function PRIVATE(conversation) {
-  const schema = Joi.object({
-    grpName: Joi.forbidden(),
-    image: Joi.forbidden(),
-    users: Joi.array().unique().min(2).required(),
-  });
-  return schema.validate(conversation);
-}
-
-function GROUP(conversation) {
-  const schema = Joi.object({
-    grpName: Joi.string(),
-    image: Joi.string(),
-    users: Joi.array().unique().required(),
-  });
-  return schema.validate(conversation);
-}
-
 conversationSchema.plugin(pagination);
 conversationSchema.plugin(mongooseAutoIncrement.plugin, {
   model: "Conversation",
@@ -120,5 +101,3 @@ conversationSchema.plugin(mongooseAutoIncrement.plugin, {
 
 const Conversation = mongoose.model("Conversation", conversationSchema);
 module.exports.Conversation = Conversation;
-module.exports.PRIVATE = PRIVATE;
-module.exports.GROUP = GROUP;

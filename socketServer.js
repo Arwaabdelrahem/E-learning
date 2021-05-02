@@ -29,7 +29,7 @@ module.exports = {
           if (!data.content && !data.attachment) return;
 
           const { _id } = socket.decoded_token;
-          console.log("HERE", _id);
+          console.log("Private", _id);
 
           // find prev conversation
           let conversation = await Conversation.findOne({
@@ -88,12 +88,13 @@ module.exports = {
           if (!data.content && !data.attachment) return;
 
           const { _id } = socket.decoded_token;
-          console.log("HERE", _id);
+          console.log("group Chat", _id);
 
           // find prev conversation
           let conversation = await Conversation.findOne({
             _id: data.toConversation,
           });
+
           // if not create one
           if (!conversation) return;
 
@@ -114,7 +115,6 @@ module.exports = {
 
           // emit message
           for (const i in conversation.users) {
-            console.log(conversation.users[i]);
             if (conversation.users[i].toString() === _id.toString()) continue;
             chatNamespace
               .to(`user ${conversation.users[i]}`)

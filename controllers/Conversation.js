@@ -3,16 +3,18 @@ const { Message } = require("../models/message");
 const _ = require("lodash");
 
 exports.fetchAll = async (req, res) => {
-  const conversations = await Conversation.find(
-    req.allowPagination,
-    { users: req.user._id },
-    {
-      ...req.queryOptions,
-      populate: [{ path: "users", select: "username photo" }, "lastMessage"],
-    }
-  );
+  try {
+    const conversations = await Conversation.paginate(
+      { users: req.user._id },
+      {
+        populate: [{ path: "users", select: "name image" }, "lastMessage"],
+      }
+    );
 
-  res.status(200).send(conversations);
+    res.status(200).send(conversations);
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.fetchMessagesForCoversation = async (req, res) => {
@@ -29,16 +31,13 @@ exports.fetchMessagesForCoversation = async (req, res) => {
     await conversation.save();
   }
 
-  const messages = await Message.find(
-    req.allowPagination,
+  const messages = await Message.paginate(
+    { conversation: req.params.id },
     {
-      conversation: req.params.id,
-    },
-    {
-      ...req.queryOptions,
       sort: "-createdAt",
-      populate: { path: "user", select: "username photo" },
+      populate: [{ path: "user", select: "name image" }],
     }
   );
+
   res.status(200).send(messages);
 };
