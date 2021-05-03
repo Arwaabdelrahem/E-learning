@@ -122,20 +122,25 @@ module.exports = {
                 conversation,
                 message: data,
               });
+          }
 
-            // Send Notification in-app
-            const clients = await User.findOne({ _id: conversation.users[i] });
-            const notification = await new Notification({
-              title: `New Message`,
-              body: data.content,
-              user: _id,
-              targetUsers: clients,
-              subjectType: "Message",
-              subject: createdMessage._id,
-            }).save();
+          // Send Notification in-app
+          const clients = await User.find({ _id: { $in: conversation.users } });
+          const targetUsers = clients.map((user) => user.id);
+          const notification = await new Notification({
+            title: `New Message`,
+            body: data.content,
+            user: _id,
+            targetUsers: targetUsers,
+            subjectType: "Message",
+            subject: createdMessage._id,
+          }).save();
 
-            // push notifications
-            await clients.sendNotification(
+          // push notifications
+          const receivers = clients;
+          for (let i = 0; i < receivers.length; i++) {
+            if (receivers[i]._id.toString() === _id.toString()) continue;
+            await receivers[i].sendNotification(
               notification.toFirebaseNotification()
             );
           }
