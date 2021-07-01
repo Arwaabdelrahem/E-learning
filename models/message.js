@@ -22,6 +22,11 @@ const schema = new mongoose.Schema(
       ref: "Conversation",
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["sent", "delivered", "seen"],
+      default: "sent",
+    },
   },
   { timestamps: true }
 );
