@@ -2,11 +2,13 @@ const express = require("express");
 const { User, register, log } = require("../models/user");
 const { Student } = require("../models/student");
 const multer = require("../middleware/multer");
-const cloud = require("../startup/cloudinary");
+// const cloud = require("../startup/cloudinary");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const CodeGenerator = require("node-code-generator");
 const fs = require("fs");
+const smsService = require("../services/sms");
+
 const router = express.Router();
 
 router.get("/", async (req, res, next) => {
@@ -37,11 +39,18 @@ router.post("/register", multer, async (req, res, next) => {
   var generator = new CodeGenerator();
   const code = generator.generateCodes("#+#+#+", 100)[0];
 
+  try {
+    await smsService.sendVerificationCode(req.body.phone);
+    console.log("Code Sent Successfully.");
+  } catch (error) {
+    console.log(error);
+  }
+
   var transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: "arwaabdelrahem2@gmail.com",
-      pass: process.env.pass,
+      pass: process.env.APP_PASSWORD,
     },
   });
 
@@ -66,6 +75,31 @@ router.post("/register", multer, async (req, res, next) => {
     await student.save();
     if (req.files) fs.unlinkSync(req.files[0].path);
     res.status(201).send(student);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/verifyPhoneCode", async (req, res, next) => {
+  let user = await User.findOne({ phone: req.body.phone });
+  if (!user) {
+    return res.status(404).send("User with the given phone not exits");
+  }
+
+  var verificationResult = await smsService.verificationCode(
+    req.body.phone,
+    req.body.code
+  );
+
+  try {
+    if (verificationResult.status === "approved") {
+      user.enabled = true;
+      user.emailVerifingCode = "";
+      user = await user.save();
+      res.status(200).send(user);
+    } else {
+      return res.status(400).send("Code is invailed");
+    }
   } catch (error) {
     next(error);
   }

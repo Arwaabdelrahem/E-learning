@@ -31,6 +31,13 @@ const userSchema = mongoose.Schema(
     image: {
       type: String,
     },
+    emailVerifingCode: {
+      type: String,
+    },
+    phone: {
+      type: String,
+      unique: true,
+    },
     pushTokens: [
       new mongoose.Schema(
         {
@@ -58,6 +65,7 @@ userSchema.set("toJSON", {
       id: doc.id,
       name: doc.name,
       email: doc.email,
+      phone: doc.phone,
       enabled: doc.enabled,
       image: doc.image,
       pushTokens: doc.pushTokens,
@@ -71,6 +79,7 @@ function rigesterValidation(user) {
     email: Joi.string().email().required(),
     password: Joi.string().required(),
     image: Joi.string(),
+    phone: Joi.string(),
   });
   return schema.validate(user);
 }
