@@ -11,6 +11,7 @@ const solution = require("../routes/Solutions");
 const rate = require("../routes/Rate");
 const notifications = require("../routes/Notification");
 const conversations = require("../routes/Conversations");
+const Media = require("../routes/Media");
 const { errorHandler, serverErrorHandler } = require("../middleware/error");
 
 module.exports = function (app) {
@@ -26,6 +27,7 @@ module.exports = function (app) {
   app.use("/exams", exam);
   app.use("/solutions", solution);
   app.use("/rates", rate);
+  app.use("/media", Media);
   app.use("/timeline", timeline);
   app.use(notifications);
   app.use(conversations);
