@@ -54,6 +54,23 @@ solutionSchema.virtual("mark").get(function () {
   return totalMark;
 });
 
+solutionSchema.set("toJSON", {
+  virtuals: true,
+  transform: function (doc) {
+    return {
+      id: doc.id,
+      quiz: doc.quiz,
+      student: doc.student,
+      status: doc.status,
+      questions: doc.questions,
+      mark: doc.mark,
+      submittedAt: doc.submittedAt,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  },
+});
+
 solutionSchema.plugin(pagination);
 solutionSchema.plugin(mongooseAutoIncrement.plugin, {
   model: "Solution",

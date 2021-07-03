@@ -22,6 +22,17 @@ const examSchema = new mongoose.Schema(
     duration: {
       type: Number,
     },
+    students: [
+      {
+        _id: false,
+        student: { type: Number, ref: "Student" },
+        solution: {
+          type: Number,
+          ref: "Solution",
+          autopopulate: { select: "student mark questions" },
+        },
+      },
+    ],
   },
   { timestamps: true, discriminatorKey: "kind" }
 );
@@ -53,9 +64,12 @@ function quizQuestionSchema() {
 
 examSchema.plugin(pagination);
 examSchema.plugin(mongooseAutoIncrement.plugin, { model: "Exam", startAt: 1 });
+examSchema.plugin(require("mongoose-autopopulate"));
+
 examSchema.virtual("id").get(function () {
   return parseInt(this._id);
 });
+
 examSchema.set("toJSON", {
   virtuals: true,
   transform: function (doc) {
@@ -65,7 +79,9 @@ examSchema.set("toJSON", {
       title: doc.title,
       availability: doc.availability,
       points: doc.points,
+      totalMark: doc.students ? doc.students[0].solution.mark : undefined,
       questions: doc.questions,
+      students: doc.students,
     };
   },
 });

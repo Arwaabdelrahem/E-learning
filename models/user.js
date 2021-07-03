@@ -64,10 +64,14 @@ userSchema.set("toJSON", {
     return {
       id: doc.id,
       name: doc.name,
+      kind: doc.kind,
       email: doc.email,
       phone: doc.phone,
       enabled: doc.enabled,
       image: doc.image,
+      myEnrollment: doc.kind === "Student" ? doc.myEnrollment : undefined,
+      courses: doc.kind === "Teacher" ? doc.courses : undefined,
+      rating: doc.kind === "Teacher" ? doc.rating : undefined,
       pushTokens: doc.pushTokens,
     };
   },

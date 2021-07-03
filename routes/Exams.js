@@ -13,13 +13,24 @@ const router = express.Router();
 router.get("/:courseId", auth, validate, async (req, res, next) => {
   let query = {
     ...(req.user.kind === "Student" && {
+      students: { $elemMatch: { student: req.user._id } },
+    }),
+    ...(req.user.kind !== "Student" && {
       availability: true,
     }),
   };
+  const exams = await Exam.paginate(query, {
+    ...(req.user.kind === "Student" && {
+      select: {
+        questions: 1,
+        points: 1,
+      },
+    }),
+    ...(req.user.kind !== "Student" && {
+      select: "-students ",
+    }),
+  });
 
-  const exams = await Exam.find(query).populate([
-    { path: "questions.question", select: "head modelAnswer" },
-  ]);
   res.status(200).send(exams);
 });
 
@@ -30,7 +41,7 @@ router.get("/:courseId/:examId", auth, validate, async (req, res, next) => {
       availability: true,
     }),
   };
-  let exam = await Exam.findOne(query);
+  let exam = await Exam.findOne(query).select("-students");
 
   let remainingTime;
   if (req.user.kind === "Student") {
@@ -63,7 +74,7 @@ router.put(
   isTeacher,
   validate,
   async (req, res, next) => {
-    let exam = await Exam.findById(req.params.examId);
+    let exam = await Exam.findById(req.params.examId).select("-students");
     if (!exam) return res.status(404).send("Exam not found");
 
     delete req.body.courseId;
@@ -79,7 +90,7 @@ router.post(
   isTeacher,
   validate,
   async (req, res, next) => {
-    let exam = await Exam.findById(req.params.examId);
+    let exam = await Exam.findById(req.params.examId).select("-students");
     if (!exam) return res.status(404).send("Exam not found");
 
     let question = await Question.findById(req.params.questionId);
@@ -108,7 +119,7 @@ router.delete(
   isTeacher,
   validate,
   async (req, res, next) => {
-    let exam = await Exam.findById(req.params.examId);
+    let exam = await Exam.findById(req.params.examId).select("-students");
     if (!exam) return res.status(404).send("Exam not found");
 
     let question = await Question.findById(req.params.questionId);
@@ -124,7 +135,7 @@ router.delete(
       await exam.save();
     }
 
-    res.status(200).send(exam);
+    res.status(204).send(exam);
   }
 );
 module.exports = router;

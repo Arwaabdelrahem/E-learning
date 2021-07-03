@@ -42,6 +42,9 @@ exports.correctExam = async (req, res, next) => {
     solution.submittedAt = new Date(new Date().toUTCString());
     await solution.save();
 
+    await exam.students.push({ student: req.user._id, solution: solution._id });
+    await exam.save();
+
     // Send Notification in-app
     const clients = solution.student;
     const targetUsers = solution.student._id;
