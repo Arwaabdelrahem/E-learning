@@ -53,7 +53,7 @@ router.get(
   async (req, res, next) => {
     let exam = await Exam.findById(req.params.examId)
       .populate([{ path: "questions.question", select: "head modelAnswer" }])
-      .select("title questions");
+      .select("title questions -students");
     exam = exam.toJSON({ virtuals: true });
 
     let solution = await Solution.findOne({

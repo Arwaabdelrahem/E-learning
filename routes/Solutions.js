@@ -51,7 +51,7 @@ router.post(
     });
     if (sol) return res.status(403).send("you only can submit once");
 
-    const exam = await Exam.findById(req.params.examId);
+    const exam = await Exam.findById(req.params.examId).select("-students");
     if (!exam) return res.status(404).send("Exam not found");
 
     if (exam.availability === false)

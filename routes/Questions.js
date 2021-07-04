@@ -90,7 +90,9 @@ router.delete(
     let question = await Question.findById(req.params.questionId);
     if (!question) return res.status(404).send("Question not found");
 
-    let exam = await Exam.find({ "questions.question": req.params.questionId });
+    let exam = await Exam.find({
+      "questions.question": req.params.questionId,
+    }).select("-students");
     let solution = await Solution.find({
       "questions.question": req.params.questionId,
     });
