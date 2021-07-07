@@ -10,27 +10,56 @@ const moment = require("moment");
 
 const router = express.Router();
 
-router.get("/:courseId", auth, validate, async (req, res, next) => {
-  let query = {
-    ...(req.user.kind === "Student" && {
-      students: { $elemMatch: { student: req.user._id } },
-    }),
-    ...(req.user.kind !== "Student" && {
-      availability: true,
-    }),
-  };
-  const exams = await Exam.paginate(query, {
-    ...(req.user.kind === "Student" && {
-      select: {
-        questions: 1,
-        points: 1,
-      },
-    }),
-    ...(req.user.kind !== "Student" && {
-      select: "-students ",
-    }),
-  });
+// router.get("/:courseId", auth, validate, async (req, res, next) => {
+//   console.log(req.user._id);
+//   let query = {
+//     ...(req.user.kind === "Student" && {
+//       students: { $elemMatch: { student: req.user._id } },
+//     }),
+//     ...(req.user.kind !== "Student" && {
+//       availability: true,
+//     }),
+//   };
+//   const exams = await Exam.paginate(query, {
+//     ...(req.user.kind === "Student" && {
+//       select: {
+//         students: 1,
+//         questions: 1,
+//         points: 1,
+//       },
+//     }),
+//     ...(req.user.kind !== "Student" && {
+//       select: "-students ",
+//     }),
+//   });
 
+//   res.status(200).send(exams);
+// });
+
+router.get("/aggregate/:courseId", auth, validate, async (req, res, next) => {
+  const exams = await Exam.aggregate([
+    { $unwind: "$students" },
+    { $match: { "students.student": req.user._id } },
+    {
+      $lookup: {
+        from: "solutions",
+        localField: "students.solution",
+        foreignField: "_id",
+        as: "students.solution",
+      },
+    },
+    { $unwind: "$students.solution" },
+    {
+      $project: {
+        id: 1,
+        solutions: 1,
+        points: { $sum: "$questions.point" },
+        totalMark: { $sum: "$students.solution.questions.mark" },
+        questions: 1,
+        "students.solution": 1,
+      },
+    },
+  ]);
   res.status(200).send(exams);
 });
 
