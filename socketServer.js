@@ -1,3 +1,4 @@
+const _ = require("lodash");
 const socketIO = require("socket.io");
 const socketIOJwt = require("socketio-jwt");
 const { Conversation } = require("./models/conversation");
@@ -9,9 +10,9 @@ module.exports = {
   up: function (server) {
     try {
       const io = socketIO(server);
-
       // Chat
       const chatNamespace = io.of("/chat");
+
       chatNamespace.on(
         "connection",
         socketIOJwt.authorize({
@@ -21,9 +22,63 @@ module.exports = {
 
       chatNamespace.on("authenticated", async function (socket) {
         const { _id } = socket.decoded_token;
-        console.log(_id);
+        const user = await User.findById(_id);
+        let conv;
+        console.log(_id, user.name);
+
         // join room
         await socket.join(`user ${_id}`);
+
+        socket.on("join", async (data) => {
+          conv = await Conversation.findOne({
+            grpName: data.room,
+            conversationType: "GROUP",
+          });
+          if (!conv) {
+            conv = await new Conversation({
+              grpName: data.room,
+              users: [_id],
+              owner: _id,
+              conversationType: "GROUP",
+              meta: [
+                { user: _id, countOfUnseenMessages: 0 },
+                { user: data.toUser, countOfUnseenMessages: 0 },
+              ],
+            }).save();
+          }
+
+          const member = _.findKey(conv.users, (m) => {
+            if (m.toString() === _id.toString()) return "index";
+          });
+          if (!member) {
+            await conv.users.push(_id);
+            await conv.meta.push({
+              user: _id,
+              countOfUnseenMessages: 0,
+            });
+            await conv.save();
+          }
+
+          socket.emit("new message", `welcome ${user.name}`);
+          for (const i in conv.users) {
+            if (conv.users[i].toString() === _id.toString()) continue;
+
+            chatNamespace
+              .to(`user ${conv.users[i]}`)
+              .emit("new message", `${data.name} joined the chat`);
+          }
+        });
+
+        socket.on("disconnect", async () => {
+          for (const i in conv.users) {
+            console.log(conv.users[i]);
+            if (conv.users[i].toString() === _id.toString()) continue;
+
+            chatNamespace
+              .to(`user ${conv.users[i]}`)
+              .emit("new message", `${user.name} disconnected`);
+          }
+        });
 
         socket.on("private", async function (data) {
           if (!data.content && !data.attachment) return;
